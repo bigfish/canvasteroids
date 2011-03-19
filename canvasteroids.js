@@ -7,7 +7,9 @@
     var FPS = 30;
     var LEVEL = 1;
     var TIMER;
+    var MAX_BULLETS = 100;
     var rocks = [];
+    var bullets = [];
     var ship;
 
     //common functions used in all states
@@ -115,13 +117,15 @@
     Ship.prototype.init = function () {
         this.x = canvas_width / 2;
         this.y = canvas_height / 2;
+        this.turn_speed = TWO_PI / 120;
         this.rotation = 0;
-        this.speed = 0;
+        this.rv = 0;
+        this.acc = 0;
+        this.vel = 0;
     };
 
     Ship.prototype.draw = function () {
         ctx.save();
-
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
         ctx.beginPath();
@@ -132,6 +136,69 @@
         ctx.stroke();
 
         ctx.restore();
+    };
+
+    Ship.prototype.rotate = function (dir) {
+        this.rv = dir * this.turn_speed;
+    };
+
+    Ship.prototype.turnRight = function () {
+        this.rotate(1);
+    };
+
+    Ship.prototype.turnLeft = function () {
+        this.rotate(-1);
+    };
+
+    Ship.prototype.stopTurning = function () {
+        this.rotate(0);
+    };
+
+    Ship.prototype.thrust = function () {
+        this.acc = 1.1;
+        if (this.vel < 1) {
+            this.vel = 1;
+        }
+    };
+
+    Ship.prototype.stopThrust = function () {
+        this.acc = 0.99;
+    };
+
+    Ship.prototype.update = function () {
+        this.rotation += this.rv;
+        if (this.acc > 0.01) {
+            this.vel *= this.acc;
+        } else {
+            this.acc = 0;
+        }
+        if (this.vel < 0.01) {
+            this.vel = 0;
+        } else if (this.vel > 5) {
+            this.vel = 5;
+        }
+        this.x += -1 * this.vel * Math.cos(this.rotation + Math.PI / 2);
+        this.y += -1 * this.vel * Math.sin(this.rotation + Math.PI / 2);
+
+    };
+
+    Ship.prototype.fire = function () {
+        var bulletSpeed = 5;
+        console.log("fire");
+        //bullet should initially be at the tip of the space ship
+        //moving away (up) 
+        var r = this.rotation - Math.PI / 2;
+        var h = this.height / 2;
+        if (bullets.length < MAX_BULLETS) {
+            var bullet = {
+                x: this.x + h * Math.cos(r),
+                y: this.y + h * Math.sin(r),
+                vx: bulletSpeed * Math.cos(r),
+                vy: bulletSpeed * Math.sin(r),
+                active: true
+            };
+            bullets.push(bullet);
+        }
     };
 
 
@@ -176,8 +243,12 @@
         function onClick(event) {
             var x = event.clientX - canvas.offsetLeft;
             var y = event.clientY - canvas.offsetTop;
-            if (ctx.isPointInPath(x, y)) {
-                changeState(PRE_PLAY);
+
+            if (state === PRE_GAME) {
+                if (ctx.isPointInPath(x, y)) {
+                    //changeState(PRE_PLAY);
+                    changeState(PLAY);
+                }
             }
         }
 
@@ -197,6 +268,7 @@
             break;
 
         case 'exit':
+            console.log("exit::PRE_GAME");
             canvas.removeEventListener('click', onClick, false);
             reset();
             break;
@@ -210,7 +282,7 @@
 
         function coastIsClear() {
             var rx, ry;
-            var safeSpace = 150;
+            var safeSpace = 100;
             //debug - draw safeSpace
             ctx.save();
             ctx.beginPath();
@@ -265,6 +337,7 @@
             break;
 
         case 'resize':
+
             resize();
             reset();
             break;
@@ -281,9 +354,33 @@
 
     PLAY = function (msg) {
 
-        function drawShip() {
-            ship.draw();
+        function updateBullets() {
+            var bullet;
+            ctx.save();
+            for (var b = 0; b < bullets.length; b++) {
+                bullet = bullets[b];
+                if (!bullet.active) {
+                    continue;
+                }
+                bullet.x += bullet.vx;
+                bullet.y += bullet.vy;
+                //do wrapping
+                if (bullet.x < 0) {
+                    bullet.x += canvas_width;
+                } else if (bullet.x > canvas_width) {
+                    bullet.x -= canvas_width;
+                }
+                if (bullet.y < 0) {
+                    bullet.y += canvas_height;
+                } else if (bullet.y > canvas_height) {
+                    bullet.y -= canvas_height;
+                }
+                ctx.fillStyle = '#00FF00';
+                ctx.fillRect(bullet.x, bullet.y, 2, 2);
+            }
+            ctx.restore();
         }
+
         //handle messages
         switch (msg) {
 
@@ -301,7 +398,34 @@
                 rocks[r].checkWrap();
                 rocks[r].draw();
             }
-            drawShip();
+            updateBullets();
+            ship.update();
+            ship.draw();
+            break;
+
+        case 'right_keypress':
+            ship.turnRight();
+            break;
+
+        case 'left_keypress':
+            ship.turnLeft();
+            break;
+
+        case 'left_keyup':
+        case 'right_keyup':
+            ship.stopTurning();
+            break;
+
+        case 'up_keypress':
+            ship.thrust();
+            break;
+
+        case 'up_keyup':
+            ship.stopThrust();
+            break;
+
+        case 'spacebar':
+            ship.fire();
             break;
 
         case 'resize':
@@ -361,12 +485,21 @@
     function onKeyPress(e) {
         var key = getKey(e);
 
-        console.log("keyPress", key);
         switch (key) {
         case 'left':
+            state('left_keypress');
             break;
 
         case 'right':
+            state('right_keypress');
+            break;
+
+        case 'up':
+            state('up_keypress');
+            break;
+
+        case 'space':
+            state('spacebar');
             break;
 
         default:
@@ -377,13 +510,19 @@
     function onKeyUp(e) {
         var key = getKey(e);
 
-        console.log("keyUp", key);
         switch (key) {
         case 'left':
+            state('left_keyup');
             break;
 
         case 'right':
+            state('right_keyup');
             break;
+
+        case 'up':
+            state('up_keyup');
+            break;
+
         default:
             // code
         }

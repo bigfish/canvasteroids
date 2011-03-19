@@ -4,7 +4,7 @@
     var RND = function (max) {
         return Math.random() * max;
     };
-    var FPS = 40;
+    var FPS = 30;
     //initialize data structures
     var LEVEL = 0;
     var TIMER;
@@ -61,7 +61,6 @@
         this.bearing = RND(TWO_PI);
         this.vx = speed * Math.cos(this.bearing);
         this.vy = speed * Math.sin(this.bearing);
-
         for (var p = 0; p < this.num_points - 1; p++) {
             this.points.push(min_radius + RND(var_radius));
         }
@@ -72,21 +71,39 @@
         this.y += this.vy;
     };
 
+    Rock.prototype.checkWrap = function () {
+        var buffer = 200;
+
+        if (this.x > canvas_width + buffer) {
+            this.x = -buffer;
+        } else if (this.x < -buffer) {
+            this.x = canvas_width + buffer;
+        }
+
+        if (this.y > canvas_height + buffer) {
+            this.y = -buffer;
+        } else if (this.y < -buffer) {
+            this.y = canvas_height + buffer;
+        }
+    };
 
     Rock.prototype.draw = function () {
-        console.log("draw");
+
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.beginPath();
 
         ctx.moveTo(0, this.points[0]);
+
         for (var p = 0; p < this.num_points - 1; p++) {
             ctx.rotate(this.ang_incr);
             ctx.lineTo(0, this.points[p]);
         }
 
+
         ctx.closePath();
         ctx.stroke();
+
         ctx.restore();
     };
 
@@ -163,11 +180,6 @@
 
 
     PLAY = function (msg) {
-        //private functions
-
-        function drawRock(rock) {
-
-        }
 
         function startLevel() {
             LEVEL++;
@@ -191,8 +203,14 @@
             reset();
             for (var r = 0; r < rocks.length; r++) {
                 rocks[r].move();
+                rocks[r].checkWrap();
                 rocks[r].draw();
             }
+            break;
+
+        case 'resize':
+            resize();
+            reset();
             break;
 
         case 'exit':

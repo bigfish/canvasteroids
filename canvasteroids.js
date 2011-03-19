@@ -5,7 +5,7 @@
         return Math.random() * max;
     };
     var FPS = 30;
-    var LEVEL = 0;
+    var LEVEL = 1;
     var TIMER;
     var rocks = [];
     var ship;
@@ -137,7 +137,7 @@
 
     //state functions
     //states --> functions assigned below
-    var PRE_GAME, PLAY;
+    var PRE_GAME, PRE_PLAY, PLAY;
 
     function changeState(newState) {
         if (state) {
@@ -177,7 +177,7 @@
             var x = event.clientX - canvas.offsetLeft;
             var y = event.clientY - canvas.offsetTop;
             if (ctx.isPointInPath(x, y)) {
-                changeState(PLAY);
+                changeState(PRE_PLAY);
             }
         }
 
@@ -206,28 +206,49 @@
     };
 
 
-    PLAY = function (msg) {
+    PRE_PLAY = function (msg) {
 
-        function startLevel() {
-            LEVEL++;
+        function coastIsClear() {
+            var rx, ry;
+            var safeSpace = 150;
+            //debug - draw safeSpace
+            ctx.save();
+            ctx.beginPath();
+            ctx.translate(canvas_width / 2 - safeSpace, canvas_height / 2 - safeSpace);
+            ctx.rect(0, 0, safeSpace * 2, safeSpace * 2);
+            ctx.stroke();
+            ctx.restore();
+            //end debug
+            for (var r = 0; r < rocks.length; r++) {
+                rx = rocks[r].x;
+                ry = rocks[r].y;
+                if (rx > canvas_width / 2 - safeSpace && rx < canvas_width / 2 + safeSpace && ry > canvas_height / 2 - safeSpace && ry < canvas_height / 2 + safeSpace) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function makeRocks() {
             //create rocks
             rocks = [];
             var num_rocks = Math.round(LEVEL * 0.25 * 48);
             for (var r = 0; r < num_rocks; r++) {
                 rocks.push(new Rock(RND(canvas_width), RND(canvas_height), 16, 60, 1));
             }
+
             //ship
             ship = new Ship();
             ship.init();
             ship.draw();
-
         }
+
 
         //handle messages
         switch (msg) {
 
         case 'enter':
-            startLevel();
+            makeRocks();
             startTimer();
             break;
 
@@ -238,7 +259,9 @@
                 rocks[r].checkWrap();
                 rocks[r].draw();
             }
-            ship.draw();
+            if (coastIsClear()) {
+                changeState(PLAY);
+            }
             break;
 
         case 'resize':
@@ -254,6 +277,47 @@
         default:
             // code
         }
+    };
+
+    PLAY = function (msg) {
+
+        function drawShip() {
+            ship.draw();
+        }
+        //handle messages
+        switch (msg) {
+
+        case 'enter':
+            console.log("enter::PLAY");
+            ship = new Ship();
+            ship.init();
+            startTimer();
+            break;
+
+        case 'tick':
+            reset();
+            for (var r = 0; r < rocks.length; r++) {
+                rocks[r].move();
+                rocks[r].checkWrap();
+                rocks[r].draw();
+            }
+            drawShip();
+            break;
+
+        case 'resize':
+            resize();
+            reset();
+            break;
+
+        case 'exit':
+
+            stopTimer();
+            break;
+
+        default:
+            // code
+        }
+
     };
 
 
@@ -274,5 +338,57 @@
             state('resize');
         }, 200);
     };
+
+    //handle keyboard
+    var keys = {
+        16: 'shift',
+        17: 'ctrl',
+        18: 'alt',
+        32: 'space',
+        19: 'pause',
+        37: 'left',
+        38: 'up',
+        39: 'right',
+        40: 'down'
+    };
+
+    function getKey(e) {
+        var evt = e || event;
+        var key = keys[evt.keyCode];
+        return key || '';
+    }
+
+    function onKeyPress(e) {
+        var key = getKey(e);
+
+        console.log("keyPress", key);
+        switch (key) {
+        case 'left':
+            break;
+
+        case 'right':
+            break;
+
+        default:
+            // code
+        }
+    }
+
+    function onKeyUp(e) {
+        var key = getKey(e);
+
+        console.log("keyUp", key);
+        switch (key) {
+        case 'left':
+            break;
+
+        case 'right':
+            break;
+        default:
+            // code
+        }
+    }
+    document.onkeydown = onKeyPress;
+    document.onkeyup = onKeyUp;
 
 })();

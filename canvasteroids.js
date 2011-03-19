@@ -1,5 +1,14 @@
 (function () {
     var canvas, canvas_width, canvas_height, ctx, state;
+    var TWO_PI = Math.PI * 2;
+    var RND = function (max) {
+        return Math.random() * max;
+    };
+    var FPS = 40;
+    //initialize data structures
+    var LEVEL = 0;
+    var TIMER;
+    var rocks = [];
 
     //common functions used in all states
 
@@ -25,17 +34,62 @@
         ctx.font = "24px Verdana,Arial,sans-serif";
     }
 
-
-    //handle window resizes
-    window.onresize = function () {
-        var lastTime;
-        if (lastTime) {
-            clearInterval(lastTime);
+    function stopTimer() {
+        if (TIMER) {
+            clearInterval(TIMER);
         }
-        lastTime = setTimeout(function () {
-            state('resize');
-        }, 200);
+    }
+
+    function startTimer() {
+        stopTimer();
+        TIMER = setInterval(function () {
+            state('tick');
+        }, 1000 / FPS);
+    }
+
+    //classes
+    var Rock = function (x, y, num_points, radius, speed) {
+
+        var min_radius = radius * 0.7;
+        var var_radius = radius * 0.3;
+
+        this.num_points = num_points;
+        this.ang_incr = TWO_PI / this.num_points;
+        this.x = x;
+        this.y = y;
+        this.points = [];
+        this.bearing = RND(TWO_PI);
+        this.vx = speed * Math.cos(this.bearing);
+        this.vy = speed * Math.sin(this.bearing);
+
+        for (var p = 0; p < this.num_points - 1; p++) {
+            this.points.push(min_radius + RND(var_radius));
+        }
     };
+
+    Rock.prototype.move = function () {
+        this.x += this.vx;
+        this.y += this.vy;
+    };
+
+
+    Rock.prototype.draw = function () {
+        console.log("draw");
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.beginPath();
+
+        ctx.moveTo(0, this.points[0]);
+        for (var p = 0; p < this.num_points - 1; p++) {
+            ctx.rotate(this.ang_incr);
+            ctx.lineTo(0, this.points[p]);
+        }
+
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+    };
+
 
     //state functions
     //states --> functions assigned below
@@ -107,14 +161,43 @@
         }
     };
 
-    PLAY = function (msg) {
-        switch (msg) {
-        case 'enter':
 
+    PLAY = function (msg) {
+        //private functions
+
+        function drawRock(rock) {
+
+        }
+
+        function startLevel() {
+            LEVEL++;
+            rocks = [];
+            var num_rocks = Math.round(LEVEL * 0.25 * 64);
+            for (var r = 0; r < num_rocks; r++) {
+                rocks.push(new Rock(RND(canvas_width), RND(canvas_height), 12, 80, 3));
+            }
+        }
+
+        //handle messages
+        switch (msg) {
+
+        case 'enter':
+            console.log("PLAY::enter");
+            startLevel();
+            startTimer();
+            break;
+
+        case 'tick':
+            reset();
+            for (var r = 0; r < rocks.length; r++) {
+                rocks[r].move();
+                rocks[r].draw();
+            }
             break;
 
         case 'exit':
 
+            stopTimer();
             break;
 
         default:
@@ -130,5 +213,15 @@
 
     changeState(PRE_GAME);
 
+    //handle window resizes
+    window.onresize = function () {
+        var lastTime;
+        if (lastTime) {
+            clearInterval(lastTime);
+        }
+        lastTime = setTimeout(function () {
+            state('resize');
+        }, 200);
+    };
 
 })();

@@ -120,8 +120,14 @@
         this.turn_speed = TWO_PI / 120;
         this.rotation = 0;
         this.rv = 0;
+        this.vx = 0;
+        this.vy = 0;
         this.acc = 0;
         this.vel = 0;
+        this.mass = 5;
+        this.force = 0;
+        this.friction = 0.98;
+        this.thrust = false;
     };
 
     Ship.prototype.draw = function () {
@@ -154,31 +160,60 @@
         this.rotate(0);
     };
 
-    Ship.prototype.thrust = function () {
-        this.acc = 1.1;
-        if (this.vel < 1) {
-            this.vel = 1;
-        }
+    Ship.prototype.startThrust = function () {
+        this.thrust = true;
+        this.force = -1.1; //-y direction
     };
 
     Ship.prototype.stopThrust = function () {
-        this.acc = 0.99;
+        this.thrust = false;
+        this.force = 0;
     };
 
     Ship.prototype.update = function () {
+        var accel, orientation, ax, ay;
+        var max_vel = 5;
         this.rotation += this.rv;
-        if (this.acc > 0.01) {
-            this.vel *= this.acc;
+
+        if (this.thrust) {
+
+            //force is applied in direction of ships orientation
+            //F = ma
+            //a = F/m
+            accel = this.force / this.mass;
+            orientation = this.rotation + Math.PI / 2;
+            ax = accel * Math.cos(orientation);
+            ay = accel * Math.sin(orientation);
+
+            this.vx += ax;
+            this.vy += ay;
+
+            this.x += this.vx;
+            this.y += this.vy;
+
         } else {
-            this.acc = 0;
+
+            this.x += this.vx;
+            this.y += this.vy;
         }
-        if (this.vel < 0.01) {
-            this.vel = 0;
-        } else if (this.vel > 5) {
-            this.vel = 5;
+
+/*if (this.vx) {
+
+            if (Math.abs(this.vx) > 0.01) {
+                this.x += this.vx;
+            } else {
+                this.vx = 0;
+            }
         }
-        this.x += -1 * this.vel * Math.cos(this.rotation + Math.PI / 2);
-        this.y += -1 * this.vel * Math.sin(this.rotation + Math.PI / 2);
+
+        if (this.vy) {
+
+            if (Math.abs(this.vy) > 0.01) {
+                this.y += this.vy;
+            } else {
+                this.vy = 0;
+            }
+        }*/
 
     };
 
@@ -195,7 +230,9 @@
                 y: this.y + h * Math.sin(r),
                 vx: bulletSpeed * Math.cos(r),
                 vy: bulletSpeed * Math.sin(r),
-                active: true
+                active: true,
+                dx: 0,
+                dy: 0
             };
             bullets.push(bullet);
         }
@@ -364,6 +401,12 @@
                 }
                 bullet.x += bullet.vx;
                 bullet.y += bullet.vy;
+                bullet.dx += Math.abs(bullet.vx);
+                bullet.dy += Math.abs(bullet.vy);
+                if (bullet.dx > canvas_width * 0.8 || bullet.dy > canvas_height * 0.8) {
+                    bullet.active = false;
+                    continue;
+                }
                 //do wrapping
                 if (bullet.x < 0) {
                     bullet.x += canvas_width;
@@ -417,7 +460,7 @@
             break;
 
         case 'up_keypress':
-            ship.thrust();
+            ship.startThrust();
             break;
 
         case 'up_keyup':

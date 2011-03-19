@@ -5,10 +5,10 @@
         return Math.random() * max;
     };
     var FPS = 30;
-    //initialize data structures
     var LEVEL = 0;
     var TIMER;
     var rocks = [];
+    var ship;
 
     //common functions used in all states
 
@@ -100,7 +100,34 @@
             ctx.lineTo(0, this.points[p]);
         }
 
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+    };
 
+    //Ship
+    var Ship = function () {
+        this.height = 25;
+        this.width = 15;
+        this.baseAngle = Math.atan2(this.height, this.width / 2);
+    };
+
+    Ship.prototype.init = function () {
+        this.x = canvas_width / 2;
+        this.y = canvas_height / 2;
+        this.rotation = 0;
+        this.speed = 0;
+    };
+
+    Ship.prototype.draw = function () {
+        ctx.save();
+
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.beginPath();
+        ctx.moveTo(-this.width / 2, this.height / 2);
+        ctx.lineTo(0, -this.height / 2);
+        ctx.lineTo(this.width / 2, this.height / 2);
         ctx.closePath();
         ctx.stroke();
 
@@ -183,18 +210,23 @@
 
         function startLevel() {
             LEVEL++;
+            //create rocks
             rocks = [];
-            var num_rocks = Math.round(LEVEL * 0.25 * 64);
+            var num_rocks = Math.round(LEVEL * 0.25 * 48);
             for (var r = 0; r < num_rocks; r++) {
-                rocks.push(new Rock(RND(canvas_width), RND(canvas_height), 12, 80, 3));
+                rocks.push(new Rock(RND(canvas_width), RND(canvas_height), 16, 60, 1));
             }
+            //ship
+            ship = new Ship();
+            ship.init();
+            ship.draw();
+
         }
 
         //handle messages
         switch (msg) {
 
         case 'enter':
-            console.log("PLAY::enter");
             startLevel();
             startTimer();
             break;
@@ -206,6 +238,7 @@
                 rocks[r].checkWrap();
                 rocks[r].draw();
             }
+            ship.draw();
             break;
 
         case 'resize':

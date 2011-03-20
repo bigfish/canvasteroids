@@ -209,15 +209,8 @@
         ctx.lineTo(0, -this.height / 2);
         ctx.lineTo(this.width / 2, this.height / 2);
         ctx.closePath();
-        if (this.hit()) {
-            this.explode();
-        }
         ctx.stroke();
         ctx.restore();
-    };
-
-    Ship.prototype.explode = function () {
-        console.log("AAAARRGGH");
     };
 
     Ship.prototype.rotate = function (dir) {
@@ -316,6 +309,7 @@
         bullet.dx = 0;
         bullet.dy = 0;
     };
+
 
     function coastIsClear() {
         var rx, ry;
@@ -505,7 +499,6 @@
         switch (msg) {
 
         case 'enter':
-            startTimer();
             console.log("enter::PLAY");
             ship = new Ship();
             ship.init();

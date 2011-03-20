@@ -50,20 +50,36 @@
         }, 1000 / FPS);
     }
 
-    //classes
-    var Rock = function (x, y, num_points, radius, speed) {
-
-        var min_radius = radius * 0.7;
-        var var_radius = radius * 0.3;
-
-        this.num_points = num_points;
+/*o = {
+        x: x,
+        y: y,
+        num_points: n,
+        radius: r,
+        speed: s,
+        size: 3|2|1
+    }
+*/
+    var Rock = function (o) {
+        this.x = o.x;
+        this.y = o.y;
+        this.size = o.size; //3 -> big, 2 -> med, 1 -> small, 0 -> destroyed
+        if (this.size === 3) {
+            this.num_points = 16;
+            this.radius = 60;
+        } else if (this.size === 2) {
+            this.num_points = 8;
+            this.radius = 40;
+        } else if (this.size === 1) {
+            this.num_points = 6;
+            this.radius = 20;
+        }
+        var min_radius = this.radius * 0.7;
+        var var_radius = this.radius * 0.3;
         this.ang_incr = TWO_PI / this.num_points;
-        this.x = x;
-        this.y = y;
         this.points = [];
         this.bearing = RND(TWO_PI);
-        this.vx = speed * Math.cos(this.bearing);
-        this.vy = speed * Math.sin(this.bearing);
+        this.vx = o.speed * Math.cos(this.bearing);
+        this.vy = o.speed * Math.sin(this.bearing);
         for (var p = 0; p < this.num_points - 1; p++) {
             this.points.push(min_radius + RND(var_radius));
         }
@@ -74,7 +90,7 @@
         this.y += this.vy;
     };
 
-    Rock.prototype.checkCollisions = function () {
+    Rock.prototype.hit = function () {
         var bullet;
         for (var i = 0; i < bullets.length; i++) {
             bullet = bullets[i];
@@ -83,13 +99,10 @@
             }
             if (ctx.isPointInPath(bullet.x, bullet.y)) {
                 bullet.active = false;
-                this.hitByBullet();
+                return true;
             }
         }
-    };
-
-    Rock.prototype.hitByBullet = function () {
-
+        return false;
     };
 
     Rock.prototype.checkWrap = function () {
@@ -122,8 +135,27 @@
         }
 
         ctx.closePath();
-        this.checkCollisions();
-        ctx.stroke();
+        if (this.hit()) {
+            rocks.push(new Rock({
+                x: this.x,
+                y: this.y,
+                size: this.size - 1,
+                speed: RND(3)
+            }), new Rock({
+                x: this.x,
+                y: this.y,
+                size: this.size - 1,
+                speed: RND(3)
+            }), new Rock({
+                x: this.x,
+                y: this.y,
+                size: this.size - 1,
+                speed: RND(3)
+            }));
+            this.size = 0;
+        } else {
+            ctx.stroke();
+        }
         ctx.restore();
     };
 
@@ -159,7 +191,6 @@
         ctx.lineTo(this.width / 2, this.height / 2);
         ctx.closePath();
         ctx.stroke();
-
         ctx.restore();
     };
 
@@ -356,7 +387,12 @@
             rocks = [];
             var num_rocks = Math.round(LEVEL * 0.25 * 48);
             for (var r = 0; r < num_rocks; r++) {
-                rocks.push(new Rock(RND(canvas_width), RND(canvas_height), 16, 60, 1));
+                rocks.push(new Rock({
+                    x: RND(canvas_width),
+                    y: RND(canvas_height),
+                    size: 3,
+                    speed: 1
+                }));
             }
         }
 
@@ -401,7 +437,6 @@
         function updateBullets() {
             //TODO: make Bullet class?
             var bullet;
-            //ctx.save();
             for (var b = 0; b < bullets.length; b++) {
                 bullet = bullets[b];
                 if (!bullet.active) {
@@ -427,7 +462,6 @@
                     bullet.y -= canvas_height;
                 }
             }
-            //ctx.restore();
         }
 
         function drawBullets() {
@@ -444,6 +478,7 @@
             ctx.restore();
         }
 
+
         //handle messages
         switch (msg) {
 
@@ -458,9 +493,17 @@
             reset();
             updateBullets();
             for (var r = 0; r < rocks.length; r++) {
-                rocks[r].move();
-                rocks[r].checkWrap();
-                rocks[r].draw();
+                var rock = rocks[r];
+                if (rock.size) {
+                    rock.move();
+                    rock.checkWrap();
+/*if (rock.hit()) {
+                        rock.size = 0;
+                                          } else {
+                        rock.draw();
+                    }*/
+                    rock.draw();
+                }
             }
             drawBullets();
             ship.update();

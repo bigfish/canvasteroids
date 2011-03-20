@@ -1,3 +1,4 @@
+/*global IS_POINT_IN_PATH_MODE */
 (function () {
     var canvas, canvas_width, canvas_height, ctx, state;
     var TWO_PI = Math.PI * 2;
@@ -12,7 +13,6 @@
     var rocks = [];
     var bullets = [];
     var ship;
-    var is_chrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
     //states --> functions assigned below
     var PRE_GAME, PRE_PLAY, PLAY;
 
@@ -63,6 +63,24 @@
             }, 1000 / FPS);
         }
     }
+
+    var isPointInPath = function () {
+        if (IS_POINT_IN_PATH_MODE === 'global') {
+            return function (x, y) {
+                return ctx.isPointInPath(x, y);
+            };
+        } else if (IS_POINT_IN_PATH_MODE === 'local') {
+            //x_offset, y_offset are the global coordinates of the local origin
+            //you will have to keep track of this yourself
+            //such as by using sprites which have global x,y properties
+            //or some means of obtaining them
+            return function (x, y, x_offset, y_offset) {
+                return ctx.isPointInPath(x - x_offset, y - y_offset);
+            };
+        } else {
+            throw new Error('This game requires that IS_POINT_IN_PATH_MODE is defined');
+        }
+    }();
 
 /*o = {
         x: x,
@@ -117,9 +135,9 @@
             if (!bullet.active) {
                 continue;
             }
-            //firefox uses the current ctx coordinates for this method
-            //chrome uses global coordinates
-            if (ctx.isPointInPath(bullet.x - (is_chrome ? 0 : this.x), bullet.y - (is_chrome ? 0 : this.y))) {
+            //this function is called while the current transformation matrix
+            //has a translation applied to it, so we need to use the polyfill
+            if (isPointInPath(bullet.x, bullet.y, this.x, this.y)) {
                 bullet.active = false;
                 return true;
             }

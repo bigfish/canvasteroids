@@ -1,4 +1,4 @@
-/*global IS_POINT_IN_PATH_MODE */
+/*global IS_POINT_IN_PATH*/
 (function () {
     var canvas, canvas_width, canvas_height, ctx, state;
     var TWO_PI = Math.PI * 2;
@@ -64,23 +64,6 @@
         }
     }
 
-    var isPointInPath = function () {
-        if (IS_POINT_IN_PATH_MODE === 'global') {
-            return function (x, y) {
-                return ctx.isPointInPath(x, y);
-            };
-        } else if (IS_POINT_IN_PATH_MODE === 'local') {
-            //x_offset, y_offset are the global coordinates of the local origin
-            //you will have to keep track of this yourself
-            //such as by using sprites which have global x,y properties
-            //or some means of obtaining them
-            return function (x, y, x_offset, y_offset) {
-                return ctx.isPointInPath(x - x_offset, y - y_offset);
-            };
-        } else {
-            throw new Error('This game requires that IS_POINT_IN_PATH_MODE is defined');
-        }
-    }();
 
 /*o = {
         x: x,
@@ -137,7 +120,7 @@
             }
             //this function is called while the current transformation matrix
             //has a translation applied to it, so we need to use the polyfill
-            if (isPointInPath(bullet.x, bullet.y, this.x, this.y)) {
+            if (IS_POINT_IN_PATH(ctx, bullet.x, bullet.y, this.x, this.y)) {
                 bullet.active = false;
                 return true;
             }

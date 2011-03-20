@@ -13,6 +13,7 @@
  */
 
 var IS_POINT_IN_PATH_MODE = 'none';
+var IS_POINT_IN_PATH;
 (function () {
     var canvas, context;
     canvas = document.createElement('canvas');
@@ -26,5 +27,24 @@ var IS_POINT_IN_PATH_MODE = 'none';
         } else if (context.isPointInPath(15, 15)) {
             IS_POINT_IN_PATH_MODE = 'global';
         }
+
+        //define global function dynamically based on mode
+        IS_POINT_IN_PATH = function () {
+            if (IS_POINT_IN_PATH_MODE === 'global') {
+                return function (ctx, x, y) {
+                    return ctx.isPointInPath(x, y);
+                };
+            } else if (IS_POINT_IN_PATH_MODE === 'local') {
+                //x_offset, y_offset are the global coordinates of the origin
+                //of the local transfomration matrix
+                //you will have to keep track of this yourself
+                //since Canvas does not provide it
+                //eg. by using sprites which have global x,y properties
+                //or some means of obtaining them
+                return function (ctx, x, y, x_offset, y_offset) {
+                    return ctx.isPointInPath(x - x_offset, y - y_offset);
+                };
+            }
+        }();
     }
 })();

@@ -7,7 +7,8 @@
     var FPS = 30;
     var LEVEL = 1;
     var TIMER;
-    var MAX_BULLETS = 100;
+    var MAX_BULLETS = 25;
+    var MAX_SPEED = 15;
     var rocks = [];
     var bullets = [];
     var ship;
@@ -123,10 +124,9 @@
         this.vx = 0;
         this.vy = 0;
         this.acc = 0;
-        this.vel = 0;
         this.mass = 5;
         this.force = 0;
-        this.friction = 0.98;
+        this.friction = 0.998;
         this.thrust = false;
     };
 
@@ -176,7 +176,6 @@
         this.rotation += this.rv;
 
         if (this.thrust) {
-
             //force is applied in direction of ships orientation
             //F = ma
             //a = F/m
@@ -184,58 +183,62 @@
             orientation = this.rotation + Math.PI / 2;
             ax = accel * Math.cos(orientation);
             ay = accel * Math.sin(orientation);
-
+            //apply acceleration to velocity
             this.vx += ax;
             this.vy += ay;
-
-            this.x += this.vx;
-            this.y += this.vy;
-
-        } else {
-
-            this.x += this.vx;
-            this.y += this.vy;
         }
-
-/*if (this.vx) {
-
-            if (Math.abs(this.vx) > 0.01) {
-                this.x += this.vx;
-            } else {
-                this.vx = 0;
-            }
+        //wrapping
+        if (this.x < 0) {
+            this.x += canvas_width;
+        } else if (this.x > canvas_width) {
+            this.x -= canvas_width;
         }
-
-        if (this.vy) {
-
-            if (Math.abs(this.vy) > 0.01) {
-                this.y += this.vy;
-            } else {
-                this.vy = 0;
-            }
-        }*/
-
+        if (this.y < 0) {
+            this.y += canvas_height;
+        } else if (this.y > canvas_height) {
+            this.y -= canvas_height;
+        }
+        //cap speed
+        if (this.vx > MAX_SPEED) {
+            this.vx = MAX_SPEED;
+        } else if (this.vx < -MAX_SPEED) {
+            this.vx = -MAX_SPEED;
+        }
+        if (this.vy > MAX_SPEED) {
+            this.vy = MAX_SPEED;
+        } else if (this.vy < -MAX_SPEED) {
+            this.vy = -MAX_SPEED;
+        }
+        //update position
+        this.x += this.vx;
+        this.y += this.vy;
     };
 
     Ship.prototype.fire = function () {
-        var bulletSpeed = 5;
-        console.log("fire");
+        var bullet, bulletSpeed = 5;
         //bullet should initially be at the tip of the space ship
         //moving away (up) 
         var r = this.rotation - Math.PI / 2;
         var h = this.height / 2;
         if (bullets.length < MAX_BULLETS) {
-            var bullet = {
-                x: this.x + h * Math.cos(r),
-                y: this.y + h * Math.sin(r),
-                vx: bulletSpeed * Math.cos(r),
-                vy: bulletSpeed * Math.sin(r),
-                active: true,
-                dx: 0,
-                dy: 0
-            };
+            //create new bullet
+            bullet = {};
             bullets.push(bullet);
+        } else {
+            //re-activate inactive bullet
+            for (var i = 0; i < bullets.length; i++) {
+                if (!bullets[i].active) {
+                    bullet = bullets[i];
+                }
+            }
         }
+        bullet.active = true;
+        bullet.x = this.x + h * Math.cos(r);
+        bullet.y = this.y + h * Math.sin(r);
+        bullet.vx = this.vx + bulletSpeed * Math.cos(r);
+        bullet.vy = this.vy + bulletSpeed * Math.sin(r);
+        bullet.dx = 0;
+        bullet.dy = 0;
     };
 
 
@@ -283,8 +286,8 @@
 
             if (state === PRE_GAME) {
                 if (ctx.isPointInPath(x, y)) {
-                    //changeState(PRE_PLAY);
-                    changeState(PLAY);
+                    changeState(PRE_PLAY);
+                    //changeState(PLAY);
                 }
             }
         }

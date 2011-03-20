@@ -74,6 +74,24 @@
         this.y += this.vy;
     };
 
+    Rock.prototype.checkCollisions = function () {
+        var bullet;
+        for (var i = 0; i < bullets.length; i++) {
+            bullet = bullets[i];
+            if (!bullet.active) {
+                continue;
+            }
+            if (ctx.isPointInPath(bullet.x, bullet.y)) {
+                bullet.active = false;
+                this.hitByBullet();
+            }
+        }
+    };
+
+    Rock.prototype.hitByBullet = function () {
+
+    };
+
     Rock.prototype.checkWrap = function () {
         var buffer = 200;
 
@@ -104,6 +122,7 @@
         }
 
         ctx.closePath();
+        this.checkCollisions();
         ctx.stroke();
         ctx.restore();
     };
@@ -380,8 +399,9 @@
     PLAY = function (msg) {
 
         function updateBullets() {
+            //TODO: make Bullet class?
             var bullet;
-            ctx.save();
+            //ctx.save();
             for (var b = 0; b < bullets.length; b++) {
                 bullet = bullets[b];
                 if (!bullet.active) {
@@ -406,7 +426,19 @@
                 } else if (bullet.y > canvas_height) {
                     bullet.y -= canvas_height;
                 }
-                ctx.fillStyle = '#00FF00';
+            }
+            //ctx.restore();
+        }
+
+        function drawBullets() {
+            var bullet;
+            ctx.save();
+            ctx.fillStyle = '#00FF00';
+            for (var b = 0; b < bullets.length; b++) {
+                bullet = bullets[b];
+                if (!bullet.active) {
+                    continue;
+                }
                 ctx.fillRect(bullet.x, bullet.y, 2, 2);
             }
             ctx.restore();
@@ -424,12 +456,13 @@
 
         case 'tick':
             reset();
+            updateBullets();
             for (var r = 0; r < rocks.length; r++) {
                 rocks[r].move();
                 rocks[r].checkWrap();
                 rocks[r].draw();
             }
-            updateBullets();
+            drawBullets();
             ship.update();
             ship.draw();
             break;

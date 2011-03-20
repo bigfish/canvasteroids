@@ -12,6 +12,7 @@
     var rocks = [];
     var bullets = [];
     var ship;
+    var is_chrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
     //states --> functions assigned below
     var PRE_GAME, PRE_PLAY, PLAY;
 
@@ -116,7 +117,9 @@
             if (!bullet.active) {
                 continue;
             }
-            if (ctx.isPointInPath(bullet.x, bullet.y)) {
+            //firefox uses the current ctx coordinates for this method
+            //chrome uses global coordinates
+            if (ctx.isPointInPath(bullet.x - (is_chrome ? 0 : this.x), bullet.y - (is_chrome ? 0 : this.y))) {
                 bullet.active = false;
                 return true;
             }
@@ -141,7 +144,6 @@
     };
 
     Rock.prototype.draw = function () {
-
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.beginPath();
@@ -154,6 +156,7 @@
         }
 
         ctx.closePath();
+        //break up the rock into smaller ones
         if (this.hit()) {
             rocks.push(new Rock({
                 x: this.x,

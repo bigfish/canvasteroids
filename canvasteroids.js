@@ -323,14 +323,6 @@
         function coastIsClear() {
             var rx, ry;
             var safeSpace = 100;
-            //debug - draw safeSpace
-            ctx.save();
-            ctx.beginPath();
-            ctx.translate(canvas_width / 2 - safeSpace, canvas_height / 2 - safeSpace);
-            ctx.rect(0, 0, safeSpace * 2, safeSpace * 2);
-            ctx.stroke();
-            ctx.restore();
-            //end debug
             for (var r = 0; r < rocks.length; r++) {
                 rx = rocks[r].x;
                 ry = rocks[r].y;
@@ -342,19 +334,12 @@
         }
 
         function makeRocks() {
-            //create rocks
             rocks = [];
             var num_rocks = Math.round(LEVEL * 0.25 * 48);
             for (var r = 0; r < num_rocks; r++) {
                 rocks.push(new Rock(RND(canvas_width), RND(canvas_height), 16, 60, 1));
             }
-
-            //ship
-            ship = new Ship();
-            ship.init();
-            ship.draw();
         }
-
 
         //handle messages
         switch (msg) {

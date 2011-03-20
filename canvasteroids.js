@@ -26,11 +26,171 @@
         state = newState;
         state('enter');
     }
+    //check intersection of two shapes
+    //shapes must have .points array 
+    //and .x .y properties (global coordinates)
+
+    function _polygonsIntersect(shape1, shape2) {
+        if (!arguments.callee.count) {
+            arguments.callee.count = 1;
+        }
+        if (++arguments.callee.count === 100) {
+            console.log(shape1, shape2);
+        }
+        var intersect = false;
+        var pts1 = shape1.points,
+            pts2 = shape2.points;
+
+        ctx.save();
+        ctx.translate(shape1.x, shape1.y);
+        //activate shape1 by drawing a path with its points
+        ctx.beginPath();
+        ctx.moveTo(pts1[0][0], pts1[0][1]);
+        for (var i = 0; i < pts1.length; i++) {
+            var pt = pts1[i];
+            ctx.lineTo(pt[0], pt[1]);
+        }
+        ctx.closePath();
+        //check if any of shape2's points intersect with it
+        for (var j = 0; j < pts2.length; j++) {
+            pt = pts2[j];
+            if (IS_POINT_IN_PATH(ctx, shape2.x + pt[0], shape2.y + pt[1], shape1.x, shape1.y)) {
+                intersect = true;
+                break;
+            }
+        }
+        ctx.restore();
+        return intersect;
+    }
+
+    function polygonsIntersect(shape1, shape2) {
+        return _polygonsIntersect(shape1, shape2) || _polygonsIntersect(shape2, shape1);
+    }
 
     function init() {
 
         canvas = document.getElementsByTagName('canvas')[0];
         ctx = canvas.getContext('2d');
+        //test above
+        var testIntersect1 = polygonsIntersect({
+            x: 0,
+            y: 0,
+            points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10]
+            ]
+        }, {
+            x: 5,
+            y: 5,
+            points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10]
+            ]
+        });
+        console.log("should be true", testIntersect1);
+        var testIntersect2 = polygonsIntersect({
+            x: 0,
+            y: 0,
+            points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10]
+            ]
+        }, {
+            x: 15,
+            y: 15,
+            points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10]
+            ]
+        });
+        console.log("should be false:", testIntersect2);
+        var testIntersect3 = polygonsIntersect({
+            x: 15,
+            y: 15,
+            points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10]
+            ]
+        }, {
+            x: 0,
+            y: 0,
+            points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10]
+            ]
+        });
+        console.log("should be false:", testIntersect3);
+        var testIntersect4 = polygonsIntersect({
+            x: 5,
+            y: 5,
+            points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10]
+            ]
+        }, {
+            x: 0,
+            y: 0,
+            points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10]
+            ]
+        });
+        console.log("should be true", testIntersect4);
+        var testIntersect5 = polygonsIntersect({
+            x: 0,
+            y: 0,
+            points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10]
+            ]
+        }, {
+            x: 5,
+            y: 0,
+            points: [
+                [0, 5],
+                [10, 0],
+                [10, 10]
+            ]
+        });
+        console.log("should be true", testIntersect5);
+        var testIntersect6 = polygonsIntersect({
+            x: 5,
+            y: 0,
+            points: [
+                [0, 5],
+                [10, 0],
+                [10, 10]
+            ]
+        }, {
+            x: 0,
+            y: 0,
+            points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10]
+            ]
+        });
+        console.log("should be true", testIntersect6);
+
     }
 
     function resize() {
@@ -92,8 +252,11 @@
         var var_radius = this.radius * 0.3;
         this.ang_incr = TWO_PI / this.num_points;
         this.points = [];
-        for (var p = 0; p < this.num_points - 1; p++) {
-            this.points.push(min_radius + RND(var_radius));
+        var r = 0;
+        for (var p = 0; p < this.num_points; p++) {
+            r += this.ang_incr;
+            var radius = min_radius + RND(var_radius);
+            this.points.push([radius * Math.cos(r), radius * Math.sin(r)]);
         }
         if (parent) {
             this.bearing = (parent.bearing + RND(TWO_PI)) / 2;
@@ -144,16 +307,17 @@
         }
     };
 
-    Rock.prototype.draw = function () {
+    Rock.prototype.draw = function (col) {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.beginPath();
+        if (col) { //debug
+            ctx.strokeStyle = col;
+        }
+        ctx.moveTo(this.points[0][0], this.points[0][1]);
 
-        ctx.moveTo(0, this.points[0]);
-
-        for (var p = 0; p < this.num_points - 1; p++) {
-            ctx.rotate(this.ang_incr);
-            ctx.lineTo(0, this.points[p]);
+        for (var p = 1; p < this.num_points; p++) {
+            ctx.lineTo(this.points[p][0], this.points[p][1]);
         }
 
         ctx.closePath();
@@ -202,6 +366,11 @@
         this.force = 0;
         this.friction = 0.998;
         this.thrust = false;
+        this.points = [
+            [-this.width / 2, this.height / 2],
+            [0, -this.height / 2],
+            [this.width / 2, this.height / 2]
+        ];
     };
 
     Ship.prototype.draw = function () {
@@ -209,12 +378,16 @@
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
         ctx.beginPath();
-        ctx.moveTo(-this.width / 2, this.height / 2);
-        ctx.lineTo(0, -this.height / 2);
-        ctx.lineTo(this.width / 2, this.height / 2);
+        ctx.moveTo(this.points[0][0], this.points[0][1]);
+        ctx.lineTo(this.points[1][0], this.points[1][1]);
+        ctx.lineTo(this.points[2][0], this.points[2][1]);
         ctx.closePath();
         ctx.stroke();
         ctx.restore();
+    };
+    //get points in global coordinate space
+    Ship.prototype.getPoints = function () {
+        return this.points;
     };
 
     Ship.prototype.rotate = function (dir) {
@@ -498,7 +671,17 @@
             ctx.restore();
         }
 
+        function hitRock(ship, rock) {
+            //check if ship is out of range first
+            //before doing more expensive detection
+            var range = ship.height + rock.radius; //minimum proximity for collision to occur
+            if (Math.abs(ship.x - rock.x) > range || Math.abs(ship.y - rock.y) > range) {
+                return false;
+            } else {
+                return polygonsIntersect(rock, ship);
+            }
 
+        }
         //handle messages
         switch (msg) {
 
@@ -516,7 +699,11 @@
                 if (rock.size) {
                     rock.move();
                     rock.checkWrap();
-                    rock.draw(); //does collisions
+                    if (hitRock(ship, rock)) {
+                        rock.draw('#FF0000');
+                    } else {
+                        rock.draw();
+                    }
                 }
             }
             drawBullets();

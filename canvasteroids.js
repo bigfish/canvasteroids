@@ -12,8 +12,19 @@
     var rocks = [];
     var bullets = [];
     var ship;
+    //states --> functions assigned below
+    var PRE_GAME, PRE_PLAY, PLAY;
+
 
     //common functions used in all states
+
+    function changeState(newState) {
+        if (state) {
+            state('exit');
+        }
+        state = newState;
+        state('enter');
+    }
 
     function init() {
 
@@ -44,10 +55,12 @@
     }
 
     function startTimer() {
-        stopTimer();
-        TIMER = setInterval(function () {
-            state('tick');
-        }, 1000 / FPS);
+        //don't stop if already started
+        if (!TIMER) {
+            TIMER = setInterval(function () {
+                state('tick');
+            }, 1000 / FPS);
+        }
     }
 
 /*o = {
@@ -196,8 +209,15 @@
         ctx.lineTo(0, -this.height / 2);
         ctx.lineTo(this.width / 2, this.height / 2);
         ctx.closePath();
+        if (this.hit()) {
+            this.explode();
+        }
         ctx.stroke();
         ctx.restore();
+    };
+
+    Ship.prototype.explode = function () {
+        console.log("AAAARRGGH");
     };
 
     Ship.prototype.rotate = function (dir) {
@@ -297,64 +317,88 @@
         bullet.dy = 0;
     };
 
-
-    //state functions
-    //states --> functions assigned below
-    var PRE_GAME, PRE_PLAY, PLAY;
-
-    function changeState(newState) {
-        if (state) {
-            state('exit');
+    function coastIsClear() {
+        var rx, ry;
+        var safeSpace = 100;
+        for (var r = 0; r < rocks.length; r++) {
+            rx = rocks[r].x;
+            ry = rocks[r].y;
+            if (rx > canvas_width / 2 - safeSpace && rx < canvas_width / 2 + safeSpace && ry > canvas_height / 2 - safeSpace && ry < canvas_height / 2 + safeSpace) {
+                return false;
+            }
         }
-        state = newState;
-        state('enter');
+        return true;
+    }
+
+    function makeRocks() {
+        rocks = [];
+        var num_rocks = Math.round(LEVEL * 0.25 * 48);
+        for (var r = 0; r < num_rocks; r++) {
+            rocks.push(new Rock({
+                x: RND(canvas_width),
+                y: RND(canvas_height),
+                size: 3,
+                speed: 1
+            }));
+        }
+    }
+
+    function drawStartButton() {
+
+        var btn_width = 100;
+        var btn_height = 40;
+        var m = ctx.measureText('PLAY'); //gets width only... height is font size
+        //save the current state so we can restore it later
+        ctx.save();
+        //draw text
+        ctx.beginPath();
+        ctx.translate(canvas_width / 2 - btn_width / 2, canvas_height / 2 - btn_height / 2);
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillStyle = "#00FF00";
+        ctx.fillText('PLAY', (btn_width - m.width) / 2, (btn_height - 30) / 2);
+        //draw box - this remains as the active path after the function returns
+        ctx.beginPath();
+        ctx.rect(0, 0, btn_width, btn_height);
+        ctx.stroke();
+        //restore previous context state
+        ctx.restore();
+    }
+
+
+    function onClick(event) {
+        var x = event.clientX - canvas.offsetLeft;
+        var y = event.clientY - canvas.offsetTop;
+
+        if (state === PRE_GAME) {
+            drawStartButton();
+            if (ctx.isPointInPath(x, y)) {
+                changeState(PRE_PLAY);
+                //changeState(PLAY);
+            }
+        }
     }
 
     PRE_GAME = function (msg) {
 
         //private functions
-
-        function drawStartButton() {
-
-            var btn_width = 100;
-            var btn_height = 40;
-            var m = ctx.measureText('PLAY'); //gets width only... height is font size
-            //save the current state so we can restore it later
-            ctx.save();
-            //draw text
-            ctx.beginPath();
-            ctx.translate(canvas_width / 2 - btn_width / 2, canvas_height / 2 - btn_height / 2);
-            ctx.textAlign = "left";
-            ctx.textBaseline = "top";
-            ctx.fillStyle = "#00FF00";
-            ctx.fillText('PLAY', (btn_width - m.width) / 2, (btn_height - 30) / 2);
-            //draw box - this remains as the active path after the function returns
-            ctx.beginPath();
-            ctx.rect(0, 0, btn_width, btn_height);
-            ctx.stroke();
-            //restore previous context state
-            ctx.restore();
-        }
-
-        function onClick(event) {
-            var x = event.clientX - canvas.offsetLeft;
-            var y = event.clientY - canvas.offsetTop;
-
-            if (state === PRE_GAME) {
-                if (ctx.isPointInPath(x, y)) {
-                    changeState(PRE_PLAY);
-                    //changeState(PLAY);
-                }
-            }
-        }
-
-
         //handle messages
         switch (msg) {
 
         case 'enter':
-            drawStartButton();
+            makeRocks();
+            startTimer();
             canvas.addEventListener('click', onClick, false);
+            break;
+
+        case 'tick':
+            reset();
+            drawStartButton();
+            for (var r = 0; r < rocks.length; r++) {
+                rocks[r].move();
+                rocks[r].checkWrap();
+                rocks[r].draw();
+            }
             break;
 
         case 'resize':
@@ -366,7 +410,6 @@
         case 'exit':
             console.log("exit::PRE_GAME");
             canvas.removeEventListener('click', onClick, false);
-            reset();
             break;
 
         default:
@@ -376,37 +419,11 @@
 
     PRE_PLAY = function (msg) {
 
-        function coastIsClear() {
-            var rx, ry;
-            var safeSpace = 100;
-            for (var r = 0; r < rocks.length; r++) {
-                rx = rocks[r].x;
-                ry = rocks[r].y;
-                if (rx > canvas_width / 2 - safeSpace && rx < canvas_width / 2 + safeSpace && ry > canvas_height / 2 - safeSpace && ry < canvas_height / 2 + safeSpace) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        function makeRocks() {
-            rocks = [];
-            var num_rocks = Math.round(LEVEL * 0.25 * 48);
-            for (var r = 0; r < num_rocks; r++) {
-                rocks.push(new Rock({
-                    x: RND(canvas_width),
-                    y: RND(canvas_height),
-                    size: 3,
-                    speed: 1
-                }));
-            }
-        }
 
         //handle messages
         switch (msg) {
 
         case 'enter':
-            makeRocks();
             startTimer();
             break;
 
@@ -430,7 +447,6 @@
 
         case 'exit':
 
-            stopTimer();
             break;
 
         default:
@@ -489,10 +505,10 @@
         switch (msg) {
 
         case 'enter':
+            startTimer();
             console.log("enter::PLAY");
             ship = new Ship();
             ship.init();
-            startTimer();
             break;
 
         case 'tick':
@@ -503,12 +519,7 @@
                 if (rock.size) {
                     rock.move();
                     rock.checkWrap();
-/*if (rock.hit()) {
-                        rock.size = 0;
-                                          } else {
-                        rock.draw();
-                    }*/
-                    rock.draw();
+                    rock.draw(); //does collisions
                 }
             }
             drawBullets();

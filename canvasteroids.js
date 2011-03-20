@@ -59,7 +59,7 @@
         size: 3|2|1
     }
 */
-    var Rock = function (o) {
+    var Rock = function (o, parent) {
         this.x = o.x;
         this.y = o.y;
         this.size = o.size; //3 -> big, 2 -> med, 1 -> small, 0 -> destroyed
@@ -67,21 +67,27 @@
             this.num_points = 16;
             this.radius = 60;
         } else if (this.size === 2) {
-            this.num_points = 8;
-            this.radius = 40;
+            this.num_points = 12;
+            this.radius = 30;
         } else if (this.size === 1) {
             this.num_points = 6;
-            this.radius = 20;
+            this.radius = 10;
         }
         var min_radius = this.radius * 0.7;
         var var_radius = this.radius * 0.3;
         this.ang_incr = TWO_PI / this.num_points;
         this.points = [];
-        this.bearing = RND(TWO_PI);
-        this.vx = o.speed * Math.cos(this.bearing);
-        this.vy = o.speed * Math.sin(this.bearing);
         for (var p = 0; p < this.num_points - 1; p++) {
             this.points.push(min_radius + RND(var_radius));
+        }
+        if (parent) {
+            this.bearing = (parent.bearing + RND(TWO_PI)) / 2;
+            this.vx = (parent.vx + o.speed) * Math.cos(this.bearing);
+            this.vy = (parent.vy + o.speed) * Math.sin(this.bearing);
+        } else {
+            this.bearing = RND(TWO_PI);
+            this.vx = o.speed * Math.cos(this.bearing);
+            this.vy = o.speed * Math.sin(this.bearing);
         }
     };
 
@@ -141,17 +147,17 @@
                 y: this.y,
                 size: this.size - 1,
                 speed: RND(3)
-            }), new Rock({
+            }, this), new Rock({
                 x: this.x,
                 y: this.y,
                 size: this.size - 1,
                 speed: RND(3)
-            }), new Rock({
+            }, this), new Rock({
                 x: this.x,
                 y: this.y,
                 size: this.size - 1,
                 speed: RND(3)
-            }));
+            }, this));
             this.size = 0;
         } else {
             ctx.stroke();
@@ -169,7 +175,7 @@
     Ship.prototype.init = function () {
         this.x = canvas_width / 2;
         this.y = canvas_height / 2;
-        this.turn_speed = TWO_PI / 120;
+        this.turn_speed = TWO_PI / 60;
         this.rotation = 0;
         this.rv = 0;
         this.vx = 0;

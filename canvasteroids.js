@@ -14,7 +14,7 @@
     var bullets = [];
     var ship;
     //states --> functions assigned below
-    var PRE_GAME, PRE_PLAY, PLAY;
+    var START_GAME, PRE_PLAY, PLAY, END_OF_LIFE;
 
 
     //common functions used in all states
@@ -94,6 +94,7 @@
         if (TIMER) {
             clearInterval(TIMER);
         }
+        TIMER = null;
     }
 
     function startTimer() {
@@ -127,7 +128,7 @@
             this.radius = 30;
         } else if (this.size === 1) {
             this.num_points = 6;
-            this.radius = 10;
+            this.radius = 8;
         }
         var min_radius = this.radius * 0.7;
         var var_radius = this.radius * 0.3;
@@ -173,7 +174,7 @@
     };
 
     Rock.prototype.checkWrap = function () {
-        var buffer = 200;
+        var buffer = this.radius;
 
         if (this.x > canvas_width + buffer) {
             this.x = -buffer;
@@ -427,7 +428,7 @@
 
     function coastIsClear() {
         var rx, ry;
-        var safeSpace = 100;
+        var safeSpace = 80;
         for (var r = 0; r < rocks.length; r++) {
             rx = rocks[r].x;
             ry = rocks[r].y;
@@ -478,7 +479,7 @@
         var x = event.clientX - canvas.offsetLeft;
         var y = event.clientY - canvas.offsetTop;
 
-        if (state === PRE_GAME) {
+        if (state === START_GAME) {
             drawStartButton();
             if (ctx.isPointInPath(x, y)) {
                 changeState(PRE_PLAY);
@@ -487,10 +488,75 @@
         }
     }
 
-    PRE_GAME = function (msg) {
+    function updateBullets() {
+        //TODO: make Bullet class?
+        var bullet;
+        for (var b = 0; b < bullets.length; b++) {
+            bullet = bullets[b];
+            if (!bullet.active) {
+                continue;
+            }
+            bullet.x += bullet.vx;
+            bullet.y += bullet.vy;
+            bullet.dx += Math.abs(bullet.vx);
+            bullet.dy += Math.abs(bullet.vy);
+            if (bullet.dx > canvas_width * 0.8 || bullet.dy > canvas_height * 0.8) {
+                bullet.active = false;
+                continue;
+            }
+            //do wrapping
+            if (bullet.x < 0) {
+                bullet.x += canvas_width;
+            } else if (bullet.x > canvas_width) {
+                bullet.x -= canvas_width;
+            }
+            if (bullet.y < 0) {
+                bullet.y += canvas_height;
+            } else if (bullet.y > canvas_height) {
+                bullet.y -= canvas_height;
+            }
+        }
+    }
 
-        //private functions
-        //handle messages
+    function drawBullets() {
+        var bullet;
+        ctx.save();
+        ctx.fillStyle = '#00FF00';
+        for (var b = 0; b < bullets.length; b++) {
+            bullet = bullets[b];
+            if (!bullet.active) {
+                continue;
+            }
+            ctx.fillRect(bullet.x, bullet.y, 2, 2);
+        }
+        ctx.restore();
+    }
+
+    function animateRocks() {
+
+        for (var r = 0; r < rocks.length; r++) {
+            var rock = rocks[r];
+            if (rock.size) {
+                rocks[r].move();
+                rocks[r].checkWrap();
+                rocks[r].draw();
+            }
+        }
+    }
+
+    function hitRock(ship, rock) {
+        //check if ship is out of range first
+        //before doing more expensive detection
+        var range = ship.height + rock.radius; //minimum proximity for collision to occur
+        if (Math.abs(ship.x - rock.x) > range || Math.abs(ship.y - rock.y) > range) {
+            return false;
+        } else {
+            return polygonsIntersect(rock, ship);
+        }
+    }
+
+    START_GAME = function (msg) {
+
         switch (msg) {
 
         case 'enter':
@@ -502,11 +568,7 @@
         case 'tick':
             reset();
             drawStartButton();
-            for (var r = 0; r < rocks.length; r++) {
-                rocks[r].move();
-                rocks[r].checkWrap();
-                rocks[r].draw();
-            }
+            animateRocks();
             break;
 
         case 'resize':
@@ -516,7 +578,6 @@
             break;
 
         case 'exit':
-            console.log("exit::PRE_GAME");
             canvas.removeEventListener('click', onClick, false);
             break;
 
@@ -527,21 +588,17 @@
 
     PRE_PLAY = function (msg) {
 
-
-        //handle messages
         switch (msg) {
 
         case 'enter':
+            console.log("PRE_PLAY::enter");
             startTimer();
             break;
 
         case 'tick':
+            console.log("PRE_PLAY::tick");
             reset();
-            for (var r = 0; r < rocks.length; r++) {
-                rocks[r].move();
-                rocks[r].checkWrap();
-                rocks[r].draw();
-            }
+            animateRocks();
             if (coastIsClear()) {
                 changeState(PLAY);
             }
@@ -558,68 +615,11 @@
             break;
 
         default:
-            // code
         }
     };
 
     PLAY = function (msg) {
 
-        function updateBullets() {
-            //TODO: make Bullet class?
-            var bullet;
-            for (var b = 0; b < bullets.length; b++) {
-                bullet = bullets[b];
-                if (!bullet.active) {
-                    continue;
-                }
-                bullet.x += bullet.vx;
-                bullet.y += bullet.vy;
-                bullet.dx += Math.abs(bullet.vx);
-                bullet.dy += Math.abs(bullet.vy);
-                if (bullet.dx > canvas_width * 0.8 || bullet.dy > canvas_height * 0.8) {
-                    bullet.active = false;
-                    continue;
-                }
-                //do wrapping
-                if (bullet.x < 0) {
-                    bullet.x += canvas_width;
-                } else if (bullet.x > canvas_width) {
-                    bullet.x -= canvas_width;
-                }
-                if (bullet.y < 0) {
-                    bullet.y += canvas_height;
-                } else if (bullet.y > canvas_height) {
-                    bullet.y -= canvas_height;
-                }
-            }
-        }
-
-        function drawBullets() {
-            var bullet;
-            ctx.save();
-            ctx.fillStyle = '#00FF00';
-            for (var b = 0; b < bullets.length; b++) {
-                bullet = bullets[b];
-                if (!bullet.active) {
-                    continue;
-                }
-                ctx.fillRect(bullet.x, bullet.y, 2, 2);
-            }
-            ctx.restore();
-        }
-
-        function hitRock(ship, rock) {
-            //check if ship is out of range first
-            //before doing more expensive detection
-            var range = ship.height + rock.radius; //minimum proximity for collision to occur
-            if (Math.abs(ship.x - rock.x) > range || Math.abs(ship.y - rock.y) > range) {
-                return false;
-            } else {
-                return polygonsIntersect(rock, ship);
-            }
-
-        }
-        //handle messages
         switch (msg) {
 
         case 'enter':
@@ -636,19 +636,16 @@
                 if (rock.size) {
                     rock.move();
                     rock.checkWrap();
+                    //check for collision
                     if (hitRock(ship, rock)) {
-                        ship.explode();
+                        changeState(END_OF_LIFE);
                     }
                     rock.draw();
                 }
             }
             drawBullets();
-            if (ship.exploding) {
-                ship.explode();
-            } else {
-                ship.update();
-                ship.draw();
-            }
+            ship.update();
+            ship.draw();
             break;
 
         case 'right_keypress':
@@ -687,18 +684,54 @@
             break;
 
         default:
-            // code
         }
 
     };
 
+    END_OF_LIFE = function (msg) {
+
+        switch (msg) {
+
+        case 'enter':
+            console.log("enter:: END_OF_LIFE");
+            startTimer();
+            //set time-limit on this state
+            setTimeout(function () {
+                changeState(PRE_PLAY);
+            }, 5000);
+            break;
+
+        case 'tick':
+            console.log("END_OF_LIFE::tick");
+            reset();
+            updateBullets();
+            animateRocks();
+            drawBullets();
+            ship.explode();
+
+            break;
+
+        case 'resize':
+
+            resize();
+            reset();
+            break;
+
+        case 'exit':
+            ship.exploding = false;
+            break;
+
+        default:
+            // code
+        }
+    };
 
     //initialize canvas and clear screen
     init();
     resize();
     reset();
 
-    changeState(PRE_GAME);
+    changeState(START_GAME);
 
     //handle window resizes
     window.onresize = function () {

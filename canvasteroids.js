@@ -14,8 +14,7 @@
     var bullets = [];
     var ship;
     //states --> functions assigned below
-    var START_GAME, PRE_PLAY, PLAY, END_OF_LIFE;
-
+    var START_GAME, START_LEVEL, START_LIFE, PLAY, END_LIFE, END_LEVEL;
 
     //common functions used in all states
 
@@ -429,9 +428,14 @@
     function coastIsClear() {
         var rx, ry;
         var safeSpace = 80;
+        var rock;
         for (var r = 0; r < rocks.length; r++) {
-            rx = rocks[r].x;
-            ry = rocks[r].y;
+            rock = rocks[r];
+            if (!rock.active) {
+                continue;
+            }
+            rx = rocks.x;
+            ry = rocks.y;
             if (rx > canvas_width / 2 - safeSpace && rx < canvas_width / 2 + safeSpace && ry > canvas_height / 2 - safeSpace && ry < canvas_height / 2 + safeSpace) {
                 return false;
             }
@@ -441,14 +445,25 @@
 
     function makeRocks() {
         rocks = [];
-        var num_rocks = Math.round(LEVEL * 0.25 * 48);
+        //var num_rocks = Math.round(LEVEL * 0.25 * 24);
+        var num_rocks = 1;
+        var rock;
         for (var r = 0; r < num_rocks; r++) {
-            rocks.push(new Rock({
-                x: RND(canvas_width),
-                y: RND(canvas_height),
-                size: 3,
-                speed: 1
-            }));
+            //reuse existing rock objects to reduce GC 
+            if (rocks[r]) {
+                rock = rocks[r];
+                rock.x = RND(canvas_width);
+                rock.y = RND(canvas_height);
+                rock.size = 3;
+                rock.speed = 1;
+            } else {
+                rocks.push(new Rock({
+                    x: RND(canvas_width),
+                    y: RND(canvas_height),
+                    size: 3,
+                    speed: 1
+                }));
+            }
         }
     }
 
@@ -475,19 +490,6 @@
     }
 
 
-    function onClick(event) {
-        var x = event.clientX - canvas.offsetLeft;
-        var y = event.clientY - canvas.offsetTop;
-
-        if (state === START_GAME) {
-            drawStartButton();
-            if (ctx.isPointInPath(x, y)) {
-                changeState(PRE_PLAY);
-                //changeState(PLAY);
-            }
-        }
-    }
-
     function updateBullets() {
         //TODO: make Bullet class?
         var bullet;
@@ -500,7 +502,8 @@
             bullet.y += bullet.vy;
             bullet.dx += Math.abs(bullet.vx);
             bullet.dy += Math.abs(bullet.vy);
-            if (bullet.dx > canvas_width * 0.8 || bullet.dy > canvas_height * 0.8) {
+            //expire the bullet after a maximum distance
+            if (bullet.dx > canvas_width * 0.6 || bullet.dy > canvas_height * 0.6) {
                 bullet.active = false;
                 continue;
             }
@@ -555,7 +558,37 @@
         }
     }
 
+    function rocksLeft() {
+        for (var i = 0; i < rocks.length; i++) {
+            if (rocks[i].size) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function bulletsLeft() {
+        for (var i = 0; i < bullets.length; i++) {
+            if (bullets[i].active) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     START_GAME = function (msg) {
+
+        function onClick(event) {
+            var x = event.clientX - canvas.offsetLeft;
+            var y = event.clientY - canvas.offsetTop;
+
+            if (state === START_GAME) {
+                drawStartButton();
+                if (ctx.isPointInPath(x, y)) {
+                    changeState(START_LIFE);
+                }
+            }
+        }
 
         switch (msg) {
 
@@ -585,18 +618,97 @@
         }
     };
 
-
-    PRE_PLAY = function (msg) {
+    //a transitional state:
+    //recreate rocks and proceed to play
+    START_LEVEL = function (msg) {
 
         switch (msg) {
 
         case 'enter':
-            console.log("PRE_PLAY::enter");
+            console.log("START_LEVEL");
+            makeRocks();
+            changeState(PLAY);
+            break;
+
+        case 'exit':
+            break;
+
+        default:
+        }
+    };
+
+    END_LEVEL = function (msg) {
+
+        switch (msg) {
+
+        case 'enter':
+            console.log("END_LEVEL");
             startTimer();
             break;
 
         case 'tick':
-            console.log("PRE_PLAY::tick");
+            reset();
+            updateBullets();
+            animateRocks();
+            drawBullets();
+            ship.update();
+            ship.draw();
+            //proceed to start when no bullets left
+            //cannon is disabled in this state
+            //(spacebar is not handled)
+            if (!bulletsLeft()) {
+                changeState(START_LEVEL);
+            }
+            break;
+
+        case 'right_keypress':
+            ship.turnRight();
+            break;
+
+        case 'left_keypress':
+            ship.turnLeft();
+            break;
+
+        case 'left_keyup':
+        case 'right_keyup':
+            ship.stopTurning();
+            break;
+
+        case 'up_keypress':
+            ship.startThrust();
+            break;
+
+        case 'up_keyup':
+            ship.stopThrust();
+            break;
+
+        case 'resize':
+            resize();
+            reset();
+            break;
+
+        case 'exit':
+            break;
+
+        default:
+        }
+
+    };
+
+
+    START_LIFE = function (msg) {
+
+        switch (msg) {
+
+        case 'enter':
+            console.log("START_LIFE::enter");
+            ship = new Ship();
+            ship.init();
+            startTimer();
+            break;
+
+        case 'tick':
+            console.log("START_LIFE::tick");
             reset();
             animateRocks();
             if (coastIsClear()) {
@@ -624,8 +736,7 @@
 
         case 'enter':
             console.log("enter::PLAY");
-            ship = new Ship();
-            ship.init();
+            startTimer();
             break;
 
         case 'tick':
@@ -638,7 +749,7 @@
                     rock.checkWrap();
                     //check for collision
                     if (hitRock(ship, rock)) {
-                        changeState(END_OF_LIFE);
+                        changeState(END_LIFE);
                     }
                     rock.draw();
                 }
@@ -646,6 +757,9 @@
             drawBullets();
             ship.update();
             ship.draw();
+            if (!rocksLeft()) {
+                changeState(END_LEVEL);
+            }
             break;
 
         case 'right_keypress':
@@ -688,21 +802,21 @@
 
     };
 
-    END_OF_LIFE = function (msg) {
+    END_LIFE = function (msg) {
 
         switch (msg) {
 
         case 'enter':
-            console.log("enter:: END_OF_LIFE");
+            console.log("enter:: END_LIFE");
             startTimer();
             //set time-limit on this state
             setTimeout(function () {
-                changeState(PRE_PLAY);
+                changeState(START_LIFE);
             }, 5000);
             break;
 
         case 'tick':
-            console.log("END_OF_LIFE::tick");
+            console.log("END_LIFE::tick");
             reset();
             updateBullets();
             animateRocks();

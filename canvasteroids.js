@@ -449,21 +449,20 @@
         var num_rocks = 1;
         var rock;
         for (var r = 0; r < num_rocks; r++) {
-            //reuse existing rock objects to reduce GC 
-            if (rocks[r]) {
-                rock = rocks[r];
-                rock.x = RND(canvas_width);
-                rock.y = RND(canvas_height);
-                rock.size = 3;
-                rock.speed = 1;
-            } else {
-                rocks.push(new Rock({
-                    x: RND(canvas_width),
-                    y: RND(canvas_height),
-                    size: 3,
-                    speed: 1
-                }));
+
+            rock = new Rock({
+                x: RND(canvas_width),
+                y: RND(canvas_height),
+                size: 3,
+                speed: 1
+            });
+
+            //do not clobber ship
+            if (ship && state === START_LEVEL && polygonsIntersect(rock, ship)) {
+                num_rocks++;
+                continue;
             }
+            rocks.push(rock);
         }
     }
 
@@ -576,6 +575,50 @@
         return false;
     }
 
+    function startLevel() {
+        makeRocks();
+        changeState(PLAY);
+    }
+
+    function handleInput(event) {
+        switch (event) {
+
+        case 'right_keypress':
+            ship.turnRight();
+            break;
+
+        case 'left_keypress':
+            ship.turnLeft();
+            break;
+
+        case 'left_keyup':
+        case 'right_keyup':
+            ship.stopTurning();
+            break;
+
+        case 'up_keypress':
+            ship.startThrust();
+            break;
+
+        case 'up_keyup':
+            ship.stopThrust();
+            break;
+
+        case 'spacebar':
+            ship.fire();
+            break;
+
+        case 'resize':
+            resize();
+            reset();
+            break;
+
+        default:
+
+        }
+    }
+
+
     START_GAME = function (msg) {
 
         function onClick(event) {
@@ -604,38 +647,15 @@
             animateRocks();
             break;
 
-        case 'resize':
-            resize();
-            reset();
-            drawStartButton();
-            break;
-
         case 'exit':
             canvas.removeEventListener('click', onClick, false);
             break;
 
         default:
+            handleInput(msg);
         }
     };
 
-    //a transitional state:
-    //recreate rocks and proceed to play
-    START_LEVEL = function (msg) {
-
-        switch (msg) {
-
-        case 'enter':
-            console.log("START_LEVEL");
-            makeRocks();
-            changeState(PLAY);
-            break;
-
-        case 'exit':
-            break;
-
-        default:
-        }
-    };
 
     END_LEVEL = function (msg) {
 
@@ -643,6 +663,9 @@
 
         case 'enter':
             console.log("END_LEVEL");
+            setTimeout(function () {
+                startLevel();
+            }, 5000);
             startTimer();
             break;
 
@@ -653,44 +676,13 @@
             drawBullets();
             ship.update();
             ship.draw();
-            //proceed to start when no bullets left
-            //cannon is disabled in this state
-            //(spacebar is not handled)
-            if (!bulletsLeft()) {
-                changeState(START_LEVEL);
-            }
-            break;
-
-        case 'right_keypress':
-            ship.turnRight();
-            break;
-
-        case 'left_keypress':
-            ship.turnLeft();
-            break;
-
-        case 'left_keyup':
-        case 'right_keyup':
-            ship.stopTurning();
-            break;
-
-        case 'up_keypress':
-            ship.startThrust();
-            break;
-
-        case 'up_keyup':
-            ship.stopThrust();
-            break;
-
-        case 'resize':
-            resize();
-            reset();
             break;
 
         case 'exit':
             break;
 
         default:
+            handleInput(msg);
         }
 
     };
@@ -717,13 +709,11 @@
             break;
 
         case 'resize':
-
             resize();
             reset();
             break;
 
         case 'exit':
-
             break;
 
         default:
@@ -762,42 +752,13 @@
             }
             break;
 
-        case 'right_keypress':
-            ship.turnRight();
-            break;
-
-        case 'left_keypress':
-            ship.turnLeft();
-            break;
-
-        case 'left_keyup':
-        case 'right_keyup':
-            ship.stopTurning();
-            break;
-
-        case 'up_keypress':
-            ship.startThrust();
-            break;
-
-        case 'up_keyup':
-            ship.stopThrust();
-            break;
-
-        case 'spacebar':
-            ship.fire();
-            break;
-
-        case 'resize':
-            resize();
-            reset();
-            break;
-
         case 'exit':
 
             stopTimer();
             break;
 
         default:
+            handleInput(msg);
         }
 
     };

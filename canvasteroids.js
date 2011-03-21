@@ -71,125 +71,6 @@
 
         canvas = document.getElementsByTagName('canvas')[0];
         ctx = canvas.getContext('2d');
-        //test above
-        var testIntersect1 = polygonsIntersect({
-            x: 0,
-            y: 0,
-            points: [
-                [0, 0],
-                [10, 0],
-                [10, 10],
-                [0, 10]
-            ]
-        }, {
-            x: 5,
-            y: 5,
-            points: [
-                [0, 0],
-                [10, 0],
-                [10, 10],
-                [0, 10]
-            ]
-        });
-        console.log("should be true", testIntersect1);
-        var testIntersect2 = polygonsIntersect({
-            x: 0,
-            y: 0,
-            points: [
-                [0, 0],
-                [10, 0],
-                [10, 10],
-                [0, 10]
-            ]
-        }, {
-            x: 15,
-            y: 15,
-            points: [
-                [0, 0],
-                [10, 0],
-                [10, 10],
-                [0, 10]
-            ]
-        });
-        console.log("should be false:", testIntersect2);
-        var testIntersect3 = polygonsIntersect({
-            x: 15,
-            y: 15,
-            points: [
-                [0, 0],
-                [10, 0],
-                [10, 10],
-                [0, 10]
-            ]
-        }, {
-            x: 0,
-            y: 0,
-            points: [
-                [0, 0],
-                [10, 0],
-                [10, 10],
-                [0, 10]
-            ]
-        });
-        console.log("should be false:", testIntersect3);
-        var testIntersect4 = polygonsIntersect({
-            x: 5,
-            y: 5,
-            points: [
-                [0, 0],
-                [10, 0],
-                [10, 10],
-                [0, 10]
-            ]
-        }, {
-            x: 0,
-            y: 0,
-            points: [
-                [0, 0],
-                [10, 0],
-                [10, 10],
-                [0, 10]
-            ]
-        });
-        console.log("should be true", testIntersect4);
-        var testIntersect5 = polygonsIntersect({
-            x: 0,
-            y: 0,
-            points: [
-                [0, 0],
-                [10, 0],
-                [10, 10],
-                [0, 10]
-            ]
-        }, {
-            x: 5,
-            y: 0,
-            points: [
-                [0, 5],
-                [10, 0],
-                [10, 10]
-            ]
-        });
-        console.log("should be true", testIntersect5);
-        var testIntersect6 = polygonsIntersect({
-            x: 5,
-            y: 0,
-            points: [
-                [0, 5],
-                [10, 0],
-                [10, 10]
-            ]
-        }, {
-            x: 0,
-            y: 0,
-            points: [
-                [0, 0],
-                [10, 0],
-                [10, 10],
-                [0, 10]
-            ]
-        });
-        console.log("should be true", testIntersect6);
 
     }
 
@@ -371,6 +252,7 @@
             [0, -this.height / 2],
             [this.width / 2, this.height / 2]
         ];
+        this.exploding = false;
     };
 
     Ship.prototype.draw = function () {
@@ -485,6 +367,61 @@
         bullet.vy = this.vy + bulletSpeed * Math.sin(r);
         bullet.dx = 0;
         bullet.dy = 0;
+    };
+
+    Ship.prototype.explode = function () {
+        if (!this.exploding) {
+            this.exploding = true;
+            this.fragments = [{
+                x: this.points[0][0],
+                y: this.points[0][1],
+                ar: RND(0.05) - RND(0.025),
+                rot: Math.atan2(this.points[1][1], this.points[1][1]),
+                len: Math.sqrt((this.width / 2) * (this.width / 2) + this.height * this.height),
+                xv: RND(2) - Math.random(),
+                yv: RND(2) - Math.random()
+            },
+            {
+                x: this.points[1][0],
+                y: this.points[1][1],
+                ar: RND(0.05) - RND(0.025),
+                rot: Math.atan2(this.points[2][1], this.points[2][1]),
+                len: Math.sqrt((this.width / 2) * (this.width / 2) + this.height * this.height),
+                xv: RND(2) - Math.random(),
+                yv: RND(2) - Math.random()
+            },
+            {
+                x: this.points[0][0],
+                y: this.points[0][1],
+                ar: RND(0.05) - RND(0.025),
+                rot: 0,
+                len: this.width,
+                xv: RND(2) - Math.random(),
+                yv: RND(2) - Math.random()
+            }];
+        } else {
+            //update animation of fragments
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            for (var f = 0; f < this.fragments.length; f++) {
+                var frag = this.fragments[f];
+                //update position and rotation
+                frag.x += frag.xv;
+                frag.y += frag.yv;
+                frag.rot += frag.ar;
+                //draw
+                ctx.save();
+                ctx.translate(frag.x, frag.y);
+                ctx.rotate(frag.rot);
+                ctx.translate(0, -frag.len / 2);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, frag.len);
+                ctx.stroke();
+                ctx.restore();
+            }
+            ctx.restore();
+        }
     };
 
 
@@ -700,15 +637,18 @@
                     rock.move();
                     rock.checkWrap();
                     if (hitRock(ship, rock)) {
-                        rock.draw('#FF0000');
-                    } else {
-                        rock.draw();
+                        ship.explode();
                     }
+                    rock.draw();
                 }
             }
             drawBullets();
-            ship.update();
-            ship.draw();
+            if (ship.exploding) {
+                ship.explode();
+            } else {
+                ship.update();
+                ship.draw();
+            }
             break;
 
         case 'right_keypress':

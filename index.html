@@ -1,13 +1,27 @@
 <!DOCTYPE html>
+<!--HTML5 is the unicorn that craps skittles out its rear end-->
 <html>
   <head>
-    <title>CanvAsteroid</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.1, minimum-scale=1.0" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <script src="ispointinpath.js" type="text/javascript" charset="utf-8"></script>
+    <title>CanvAsteroids</title>
+
+    <script src="require.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+      require({
+          paths: {
+            "canvasteroids": "./lib",
+            "canvas-utils": "./lib/canvas-utils",
+            "soundmanager": "./lib/soundmanager/script"
+          }
+        },["canvasteroids/game"], function () {
+        require.ready(function () {
+            var game = require("canvasteroids/game");
+            game.init('gameCanvas');
+            game.start();
+        })
+      })
+    </script>
   </head>
   <body style="margin:0;padding:0;overflow:hidden">
-    <canvas style="overflow:hide;margin:0;padding:0">Sorry, your browser does not support Canvas. For best results, try recent version of Chrome, Firefox, Opera, or IE9</canvas> 
-    <script src="canvasteroids.js" type="text/javascript" charset="utf-8"></script>
+    <canvas id="gameCanvas" style="overflow:hide;margin:0;padding:0">Sorry, your browser does not support Canvas. For best results, try recent version of Chrome, Firefox, Opera, or IE9</canvas> 
   </body>
 </html>

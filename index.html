@@ -4,21 +4,21 @@
   <head>
     <title>CanvAsteroids</title>
 
-    <script src="require.js" type="text/javascript" charset="utf-8"></script>
+    <script src="lib/extjs/ext-foundation-debug.js" type="text/javascript" charset="utf-8"></script>
     <script type="text/javascript" charset="utf-8">
-      require({
+      Ext.Loader.setConfig({
           paths: {
-            "canvasteroids": "./lib",
-            "canvas-utils": "./lib/canvas-utils",
-            "soundmanager": "./lib/soundmanager/script"
-          }
-        },["canvasteroids/game"], function () {
-        require.ready(function () {
-            var game = require("canvasteroids/game");
+            'canvasteroids': './lib',
+            'canvasutils': './lib/canvas-utils'
+            },
+            enabled: true
+        });
+        Ext.require('canvasteroids.CanvAsteroids');
+        Ext.onReady(function () {
+            var game = new canvasteroids.CanvAsteroids();
             game.init('gameCanvas');
             game.start();
-        })
-      })
+        });
     </script>
   </head>
   <body style="margin:0;padding:0;overflow:hidden">

@@ -13,10 +13,11 @@
             },
             enabled: true
         });
-        Ext.require('canvasteroids.CanvAsteroids');
+        Ext.require('canvasteroids.Game');
         Ext.onReady(function () {
-            var game = new canvasteroids.CanvAsteroids();
-            game.init('gameCanvas');
+            var game = new canvasteroids.Game({
+                canvasId: 'gameCanvas'
+            });
             game.start();
         });
     </script>

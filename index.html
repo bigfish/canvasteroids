@@ -9,6 +9,9 @@
       Ext.Loader.setConfig({
           paths: {
             'canvasteroids': './lib',
+            'geometry': './lib/geometry',
+            'drawable': './lib/drawable',
+            'renderer': './lib/renderer',
             'canvasutils': './lib/canvas-utils'
             },
             enabled: true
@@ -16,7 +19,8 @@
         Ext.require('canvasteroids.Game');
         Ext.onReady(function () {
             var game = new canvasteroids.Game({
-                canvasId: 'gameCanvas'
+                canvasId: 'gameCanvas',
+                stroke: '#FF0000'
             });
             game.start();
         });

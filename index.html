@@ -4,6 +4,13 @@
   <head>
     <title>CanvAsteroids</title>
 
+    <script src="lib/soundmanager/script/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+      soundManager.url = "./lib/soundmanager/swf/";
+      soundManager.useFlashBlock = false;
+      soundManager.useHighPerformance = true;
+    </script>
+
     <script src="lib/extjs/ext-foundation-debug.js" type="text/javascript" charset="utf-8"></script>
     <script type="text/javascript" charset="utf-8">
       Ext.Loader.setConfig({
@@ -20,6 +27,7 @@
             'motion': './lib/motion',
             'oop': './lib/oop',
             'renderer': './lib/renderer',
+            'soundeffects': './lib/soundeffects',
             'sprites': './lib/sprites',
             'ui': './lib/ui'
             },

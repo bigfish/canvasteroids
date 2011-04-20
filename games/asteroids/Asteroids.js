@@ -9,35 +9,12 @@
     var TIMER;
     var MAX_BULLETS = 25;
     var MAX_SPEED = 15;
-    //get sound effects
-/*  var SFX = require("canvasteroids/sfx");
-    SFX.defineSounds({
-        'test': 'sounds/test.mp3'
-    });
-    //when loaded and ready...
-    SFX.ready(function () {
-        SFX.play('test');
-    });
-*/
-    //states --> functions assigned below
-    //var START_GAME, START_LEVEL, START_LIFE, PLAY, END_LIFE, END_LEVEL;
-    //common functions used in all states
-/*o = {
-        x: x,
-        y: y,
-        num_points: n,
-        radius: r,
-        speed: s,
-        size: 3|2|1
-    }
-*/
-    //handle keyboard
     //initialize canvas and clear screen
     Ext.define('Asteroids', {
 
         extend: 'oop.InitProps',
 
-        requires: ['eventbus.EventBus', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'interactive.ClickableLayer'],
+        requires: ['eventbus.EventBus', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'interactive.DraggableLayer'],
 
         constructor: function (props) {
             this.callParent([props]);
@@ -55,7 +32,7 @@
                 }, 200);
             };
 
-            this.gameLayer = new interactive.ClickableLayer({
+            this.gameLayer = new interactive.DraggableLayer({
                 x: 0,
                 y: 0,
                 fullscreen: true,
@@ -332,7 +309,7 @@
             this.gameLayer.add(this.shipFragments);
             this.sfx.play('boom');
         },
-
+        //TODO: handle touch events
         handleInput: function (event) {
             switch (event) {
 

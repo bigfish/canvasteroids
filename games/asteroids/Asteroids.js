@@ -14,7 +14,7 @@
 
         extend: 'oop.InitProps',
 
-        requires: ['eventbus.EventBus', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'interactive.DraggableLayer'],
+        requires: ['eventbus.EventBus', 'controller.TouchPad', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'interactive.DraggableLayer'],
 
         constructor: function (props) {
             this.callParent([props]);
@@ -45,6 +45,16 @@
                 keyPress: this.onKeyPress,
                 keyUp: this.onKeyUp
             });
+
+            this.touchPad = new controller.TouchPad({
+                context: this.gameLayer,
+                x: 0,
+                y: 0,
+                width: this.gameLayer.canvas_width / 2,
+                height: this.gameLayer.canvas_height
+            });
+
+            this.gameLayer.add(this.touchPad);
 
             this.ship = new sprites.Ship({
                 active: false,
@@ -269,6 +279,11 @@
             this.startButton.x = this.gameLayer.canvas_width / 2 - this.startButton.width / 2;
             this.startButton.y = this.gameLayer.canvas_height / 2 - this.startButton.height / 2;
             this.gameLayer.resize();
+
+            //resize touchPad
+            this.touchPad.width = this.gameLayer.canvas_width / 2;
+            this.touchPad.height = this.gameLayer.canvas_height;
+
         },
 
         reset: function () {

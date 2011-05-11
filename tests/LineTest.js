@@ -3,7 +3,7 @@
 
 TestCase("LineTest", {
     testConstructor: function () {
-        //var line = new geometry.Line();
-        fail("this should fail");
+        var line = new geometry.Line();
+        assertNotNull("Ensure constructor returns an object", line);
     }
 });

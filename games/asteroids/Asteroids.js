@@ -2,8 +2,8 @@
 (function () {
     var TWO_PI = Math.PI * 2;
     var RND = function (max) {
-        return Math.random() * max;
-    };
+            return Math.random() * max;
+        };
     var FPS = 30;
     var LEVEL = 1;
     var TIMER;
@@ -14,7 +14,7 @@
 
         extend: 'oop.InitProps',
 
-        requires: ['eventbus.EventBus', 'controller.TouchPad', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'interactive.DraggableLayer'],
+        requires: ['eventbus.EventBus', 'controller.TouchPad', 'drawable.DrawableLine', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'interactive.DraggableLayer'],
 
         constructor: function (props) {
             this.callParent([props]);
@@ -50,9 +50,12 @@
                 context: this.gameLayer,
                 x: 0,
                 y: 0,
-                width: this.gameLayer.canvas_width / 2,
-                height: this.gameLayer.canvas_height
+                width: this.gameLayer.canvas_width,
+                height: this.gameLayer.canvas_height,
+                touch: Ext.Function.bind(this.onTouch, this),
+                multiTouch: false
             });
+
 
             this.gameLayer.add(this.touchPad);
 
@@ -88,6 +91,37 @@
             this.sfx = soundeffects.SoundEffects;
         },
 
+        onTouch: function (evt, x, y, id, drag) {
+            //a slow drag changes thrust
+            //a click or tap fires
+            var self = this;
+            if (evt === "start") {
+                //set timer to start thrust
+                this.thrustTimeout = setTimeout(function () {
+                    self.thrustVector = new drawable.DrawableLine({
+                        start: drag.start,
+                        end: drag.end,
+                        context: self.gameLayer
+                    });
+                    self.gameLayer.add(self.thrustVector);
+                }, 250);
+            }
+
+            if (evt === "end") {
+                //cancel thrust action if it hasn't happened yet
+                if (this.thrustTimeout) {
+                    clearTimeout(this.thrustTimeout);
+                    //fire bullet since this was a click or tap event
+                    this.state("click");
+                    this.thrustTimeout = null;
+                }
+                if (this.thrustVector) {
+                    this.gameLayer.remove(this.thrustVector);
+                    this.thrustVector = null;
+                }
+            }
+        },
+
         startLevel: function () {
             this.makeRocks();
             this.changeState(this.PLAY);
@@ -109,10 +143,8 @@
         },
 
         coastIsClear: function () {
-            var rx, ry;
-            var safeSpace = 100;
-            var rock;
-            for (var r = 0; r < this.rocks.length; r++) {
+            var rx, ry, rock, r, safeSpace = 100;
+            for (r = 0; r < this.rocks.length; r++) {
                 rock = this.rocks[r];
                 if (!rock.active) {
                     continue;
@@ -144,10 +176,9 @@
 
         makeRocks: function () {
 
+            var rock, r, num_rocks = Math.round(LEVEL * 0.25 * 24);
             this.removeAllRocks();
-            var num_rocks = Math.round(LEVEL * 0.25 * 24);
-            var rock;
-            for (var r = 0; r < num_rocks; r++) {
+            for (r = 0; r < num_rocks; r++) {
 
                 rock = new sprites.Rock({
                     strokeStyle: '#00FF00',
@@ -211,9 +242,9 @@
         },
 
         bulletHitRock: function (rock) {
-            var bullet, ctx;
+            var bullet, ctx, i;
             ctx = this.gameLayer.ctx;
-            for (var i = 0; i < this.bullets.length; i++) {
+            for (i = 0; i < this.bullets.length; i++) {
                 bullet = this.bullets[i];
                 //this function is called while the current transformation matrix
                 //has a translation applied to it, so we need to use the polyfill
@@ -226,10 +257,10 @@
         },
 
         explodeRock: function (rock) {
-            var newRock, rock_conf;
+            var newRock, rock_conf, i;
             //only create new rocks if it is not the smallest size
             if (rock.size > 1) {
-                for (var i = 0; i < 3; i++) {
+                for (i = 0; i < 3; i++) {
                     this.addRock(new sprites.Rock({
                         context: this.gameLayer,
                         x: rock.x,
@@ -354,6 +385,10 @@
                 break;
 
             case 'spacebar':
+                this.fireBullet();
+                break;
+
+            case 'click':
                 this.fireBullet();
                 break;
 
@@ -499,7 +534,7 @@
         },
 
         PLAY: function (msg) {
-
+            var r;
             switch (msg) {
 
             case 'enter':
@@ -510,7 +545,7 @@
             case 'tick':
                 this.reset();
                 this.gameLayer.update();
-                for (var r = 0; r < this.rocks.length; r++) {
+                for (r = 0; r < this.rocks.length; r++) {
                     var rock = this.rocks[r];
                     //check for collisions
                     if (this.hitRock(this.ship, rock)) {
@@ -575,4 +610,4 @@
 
     });
 
-})();
+}());

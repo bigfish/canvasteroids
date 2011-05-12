@@ -30,6 +30,22 @@
                     "name": "Draggable.js"
                 },
                 {
+                    "path": "../../lib/interactive/",
+                    "name": "Drag.js"
+                },
+                {
+                    "path": "../../lib/geometry/",
+                    "name": "Point.js"
+                },
+                {
+                    "path": "../../lib/geometry/",
+                    "name": "Line.js"
+                },
+                {
+                    "path": "../../lib/drawable/",
+                    "name": "Drawable.js"
+                },
+                {
                     "path": "../../lib/canvasutils/",
                     "name": "CanvasUtils.js"
                 },
@@ -50,16 +66,12 @@
                     "name": "Velocity.js"
                 },
                 {
-                    "path": "../../lib/drawable/",
-                    "name": "Drawable.js"
-                },
-                {
-                    "path": "../../lib/geometry/",
-                    "name": "Point.js"
-                },
-                {
                     "path": "../../lib/geometry/",
                     "name": "Path.js"
+                },
+                {
+                    "path": "../../lib/drawable/",
+                    "name": "DrawableLine.js"
                 },
                 {
                     "path": "../../lib/geometry/",

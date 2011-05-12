@@ -172,6 +172,119 @@ Ext.define('interactive.Draggable', {
     }
 });
 
+/**
+ * keeps track of a drag operation
+ * start: Point
+ * end: Point
+ * dragTo(x, y);
+ */
+Ext.define('interactive.Drag', {
+    extend: 'oop.InitProps',
+    constructor: function (props) {
+        this.callParent(this.applyProps(props, {}));
+    },
+    dragTo: function (x, y) {
+        this.end.x = x;
+        this.end.y = y;
+    },
+    getOffsetX: function () {
+        return this.end.x - this.start.x;
+    },
+    getOffsetY: function () {
+        return this.end.y - this.start.y;
+    },
+    distance: function () {
+        var dx = this.getOffsetX();
+        var dy = this.getOffsetY();
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+});
+
+Ext.define('geometry.Point', {
+    extend: 'oop.InitProps',
+    constructor: function (props) {
+        this.callParent([Ext.applyIf(props, {
+            x: 0,
+            y: 0
+        })]);
+    }
+});
+
+/*global geometry */
+Ext.define('geometry.Line', {
+    extend: 'geometry.Point',
+    constructor: function (props) {
+        this.callParent([Ext.applyIf(props, {
+            start: new geometry.Point({
+                x: 0,
+                y: 0
+            }),
+            end: new geometry.Point({
+                x: 100,
+                y: 100
+            })
+        })]);
+    },
+    length: function () {
+        var dx = this.end.x - this.start.x;
+        var dy = this.end.y - this.start.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+});
+
+/**
+ * enables drawing of a shape to a canvas context
+ * requires the class mixed into is a subclass of Path
+ * and has a 'ctx' property which is a Canvas2D context
+ */
+Ext.define('drawable.Drawable', {
+
+    initDrawable: function (context) {
+        if (!context.ctx) {
+            throw new Error("Sprite requires a context property");
+        }
+        this.ctx = context.ctx;
+    },
+
+    beforeDraw: function () {
+        this.ctx.save();
+        //apply shape transform to context
+        this.ctx.translate(this.x, this.y);
+        if (this.strokeStyle) {
+            this.ctx.strokeStyle = this.strokeStyle;
+        }
+        if (this.fillStyle) {
+            this.ctx.fillStyle = this.fillStyle;
+        }
+        if (this.rotation && this.rotation) {
+            this.ctx.rotate(this.rotation);
+        }
+    },
+    //default draw method assumes Path implementation
+    draw: function () {
+        this.beforeDraw();
+
+        //draw closed path
+        var startPoint = this.getPoint(0);
+        var pathPoints = this.points.slice(1);
+        this.ctx.beginPath();
+        this.ctx.moveTo(startPoint.x, startPoint.y);
+        Ext.Array.forEach(pathPoints, function (pt, idx, arr) {
+            this.ctx.lineTo(pt.x, pt.y);
+        }, this);
+        this.ctx.closePath();
+        this.ctx.stroke();
+
+        this.afterDraw();
+    },
+
+    afterDraw: function () {
+        this.ctx.restore();
+    }
+});
+
 Ext.namespace("canvasutils");
 (function () {
     var IS_POINT_IN_PATH_MODE = 'none';
@@ -375,67 +488,6 @@ Ext.define('motion.Velocity', {
     }
 });
 
-/**
- * enables drawing of a shape to a canvas context
- * requires the class mixed into is a subclass of Path
- * and has a 'ctx' property which is a Canvas2D context
- */
-Ext.define('drawable.Drawable', {
-
-    initDrawable: function (context) {
-        if (!context.ctx) {
-            throw new Error("Sprite requires a context property");
-        }
-        this.ctx = context.ctx;
-    },
-
-    beforeDraw: function () {
-        this.ctx.save();
-        //apply shape transform to context
-        this.ctx.translate(this.x, this.y);
-        if (this.strokeStyle) {
-            this.ctx.strokeStyle = this.strokeStyle;
-        }
-        if (this.fillStyle) {
-            this.ctx.fillStyle = this.fillStyle;
-        }
-        if (this.rotation && this.rotation) {
-            this.ctx.rotate(this.rotation);
-        }
-    },
-    //default draw method assumes Path implementation
-    draw: function () {
-        this.beforeDraw();
-
-        //draw closed path
-        var startPoint = this.getPoint(0);
-        var pathPoints = this.points.slice(1);
-        this.ctx.beginPath();
-        this.ctx.moveTo(startPoint.x, startPoint.y);
-        Ext.Array.forEach(pathPoints, function (pt, idx, arr) {
-            this.ctx.lineTo(pt.x, pt.y);
-        }, this);
-        this.ctx.closePath();
-        this.ctx.stroke();
-
-        this.afterDraw();
-    },
-
-    afterDraw: function () {
-        this.ctx.restore();
-    }
-});
-
-Ext.define('geometry.Point', {
-    extend: 'oop.InitProps',
-    constructor: function (props) {
-        this.callParent([Ext.applyIf(props, {
-            x: 0,
-            y: 0
-        })]);
-    }
-});
-
 /*global geometry */
 Ext.define('geometry.Path', {
 
@@ -469,6 +521,24 @@ Ext.define('geometry.Path', {
         }, this);
     }
 
+});
+
+Ext.define('drawable.DrawableLine', {
+    extend: 'geometry.Line',
+    mixins: ['drawable.Drawable'],
+    constructor: function (props) {
+        this.callParent([props]);
+        //this is a base drawable class -- set context (required property)
+        this.initDrawable(this.context);
+    },
+    draw: function (ctx) {
+        this.beforeDraw(ctx);
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.start.x, this.start.y);
+        this.ctx.lineTo(this.end.x, this.end.y);
+        this.ctx.stroke();
+        this.afterDraw(ctx);
+    }
 });
 
 /*global canvasutils */
@@ -683,28 +753,88 @@ Ext.define('ui.Component', {
     }
 });
 
+/*global interactive geometry*/
 Ext.define('controller.TouchPad', {
     extend: 'ui.Component',
+    requires: ['interactive.Drag', 'geometry.Point'],
     mixins: ['interactive.Draggable'],
     constructor: function (props) {
         this.callParent(this.applyProps(props, {
             strokeStyle: "#FF0000",
             width: 200,
             height: 200,
-            drags: {} //hash of identifier => Drag objects
+            drags: {},
+            //hash of identifier => Drag objects,
+            multiTouch: true,
+            singleTouchId: "",
+            touching: false,
+            touches: 0
         }));
+        var self = this;
+        //add listeners for dragging events provided by Draggable
+        //create, update, or delete Drag objects in the drags hash
+        //call the touch() callback added by onTouch() if it exists
         this.onStartDrag(function (x, y, id) {
-            console.log("dragstart", x, y);
-            //self.ctx.strokeText(" x:" + x + " y:" + x, 30, 30);
-            //self.startDragPos = [x, y];
-            //self.lastDragPos = [x, y];
+            //do not create more than one drag object if multitouch disabled
+            if (!self.multitouch) {
+                if (self.touching) {
+                    return;
+                } else {
+                    self.singleTouchId = id;
+                }
+            }
+            self.drags[id] = new interactive.Drag({
+                start: new geometry.Point({
+                    x: x,
+                    y: y
+                }),
+                end: new geometry.Point({
+                    x: x,
+                    y: y
+                })
+            });
+            self.touches += 1;
+            self.touching = true;
+            if (self.touch) {
+                self.touch("start", x, y, id, self.drags[id]);
+            }
         });
+
         this.onDrag(function (x, y, id) {
-            console.log("drag", x, y);
-            //self.ctx.strokeText(" x:" + x + " y:" + x, 30, 30);
-            //self.x += x - self.lastDragPos[0];
-            //self.y += y - self.lastDragPos[1];
+            //ignore drags from additional touches if multitouch is disabled
+            if (!self.multitouch && self.singleTouchId !== id) {
+                return;
+            }
+            self.drags[id].dragTo(x, y);
+            if (self.touch) {
+                self.touch("drag", x, y, id, self.drags[id]);
+            }
         });
+
+        this.onEndDrag(function (x, y, id) {
+            delete self.drags[id];
+
+            if (!self.multitouch) {
+                self.singleTouchId = "";
+                self.touching = false;
+            } else {
+                self.touches -= 1;
+                if (self.touches === 0) {
+                    self.touching = false;
+                }
+            }
+
+            if (self.touch) {
+                self.touch("end", x, y, id);
+            }
+        });
+    },
+    //enable setting the touch() callback
+    //-- can also be done in config
+    onTouch: function (fn, ctx) {
+        if (fn) {
+            this.touch = Ext.Function.bind(fn, ctx);
+        }
     }
 
 });
@@ -793,8 +923,8 @@ Ext.define('sprites.Bullet', {
 (function () {
     var TWO_PI = Math.PI * 2;
     var RND = function (max) {
-        return Math.random() * max;
-    };
+            return Math.random() * max;
+        };
     var FPS = 30;
     var LEVEL = 1;
     var TIMER;
@@ -869,9 +999,18 @@ Ext.define('sprites.Bullet', {
             }
         },
 
+        stopTurning: function () {
+            this.rotate(0);
+        },
+
         startThrust: function () {
             this.thrust = true;
             this.force = -1.1; //-y direction
+        },
+
+        setThrust: function (f) {
+            this.thrust = true;
+            this.force = f;
         },
 
         stopThrust: function () {
@@ -928,7 +1067,7 @@ Ext.define('sprites.Bullet', {
 
     });
 
-})();
+}());
 
 /**
  * Plane is a 2D surface
@@ -1212,8 +1351,8 @@ Ext.define('interactive.DraggableLayer', {
 (function () {
     var TWO_PI = Math.PI * 2;
     var RND = function (max) {
-        return Math.random() * max;
-    };
+            return Math.random() * max;
+        };
     var FPS = 30;
     var LEVEL = 1;
     var TIMER;
@@ -1224,7 +1363,7 @@ Ext.define('interactive.DraggableLayer', {
 
         extend: 'oop.InitProps',
 
-        requires: ['eventbus.EventBus', 'controller.TouchPad', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'interactive.DraggableLayer'],
+        requires: ['eventbus.EventBus', 'controller.TouchPad', 'drawable.DrawableLine', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'interactive.DraggableLayer'],
 
         constructor: function (props) {
             this.callParent([props]);
@@ -1260,9 +1399,12 @@ Ext.define('interactive.DraggableLayer', {
                 context: this.gameLayer,
                 x: 0,
                 y: 0,
-                width: this.gameLayer.canvas_width / 2,
-                height: this.gameLayer.canvas_height
+                width: this.gameLayer.canvas_width,
+                height: this.gameLayer.canvas_height,
+                touch: Ext.Function.bind(this.onTouch, this),
+                multiTouch: false
             });
+
 
             this.gameLayer.add(this.touchPad);
 
@@ -1298,6 +1440,44 @@ Ext.define('interactive.DraggableLayer', {
             this.sfx = soundeffects.SoundEffects;
         },
 
+        onTouch: function (evt, x, y, id, drag) {
+            //a slow drag changes thrust
+            //a click or tap fires
+            var self = this;
+            if (evt === "start") {
+                //set timer to start thrust
+                this.thrustTimeout = setTimeout(function () {
+                    self.thrustVectorLine = new drawable.DrawableLine({
+                        start: drag.start,
+                        end: drag.end,
+                        context: self.gameLayer
+                    });
+                    self.gameLayer.add(self.thrustVectorLine);
+                    self.thrustVector = drag;
+                }, 250);
+            }
+
+            if (evt === "drag") {
+                this.state("drag");
+            }
+
+            if (evt === "end") {
+
+                if (this.thrustVectorLine) {
+                    this.gameLayer.remove(this.thrustVectorLine);
+                    this.thrustVectorLine = null;
+                } else if (this.thrustTimeout) {
+                    //cancel thrust action if it hasn't happened yet
+                    clearTimeout(this.thrustTimeout);
+                    //fire bullet since this was a click or tap event
+                    this.state("click");
+                }
+                this.thrustVector = null;
+                this.thrustTimeout = null;
+                this.state("dragend");
+            }
+        },
+
         startLevel: function () {
             this.makeRocks();
             this.changeState(this.PLAY);
@@ -1319,10 +1499,8 @@ Ext.define('interactive.DraggableLayer', {
         },
 
         coastIsClear: function () {
-            var rx, ry;
-            var safeSpace = 100;
-            var rock;
-            for (var r = 0; r < this.rocks.length; r++) {
+            var rx, ry, rock, r, safeSpace = 100;
+            for (r = 0; r < this.rocks.length; r++) {
                 rock = this.rocks[r];
                 if (!rock.active) {
                     continue;
@@ -1354,10 +1532,9 @@ Ext.define('interactive.DraggableLayer', {
 
         makeRocks: function () {
 
+            var rock, r, num_rocks = Math.round(LEVEL * 0.25 * 24);
             this.removeAllRocks();
-            var num_rocks = Math.round(LEVEL * 0.25 * 24);
-            var rock;
-            for (var r = 0; r < num_rocks; r++) {
+            for (r = 0; r < num_rocks; r++) {
 
                 rock = new sprites.Rock({
                     strokeStyle: '#00FF00',
@@ -1421,9 +1598,9 @@ Ext.define('interactive.DraggableLayer', {
         },
 
         bulletHitRock: function (rock) {
-            var bullet, ctx;
+            var bullet, ctx, i;
             ctx = this.gameLayer.ctx;
-            for (var i = 0; i < this.bullets.length; i++) {
+            for (i = 0; i < this.bullets.length; i++) {
                 bullet = this.bullets[i];
                 //this function is called while the current transformation matrix
                 //has a translation applied to it, so we need to use the polyfill
@@ -1436,10 +1613,10 @@ Ext.define('interactive.DraggableLayer', {
         },
 
         explodeRock: function (rock) {
-            var newRock, rock_conf;
+            var newRock, rock_conf, i;
             //only create new rocks if it is not the smallest size
             if (rock.size > 1) {
-                for (var i = 0; i < 3; i++) {
+                for (i = 0; i < 3; i++) {
                     this.addRock(new sprites.Rock({
                         context: this.gameLayer,
                         x: rock.x,
@@ -1491,7 +1668,7 @@ Ext.define('interactive.DraggableLayer', {
             this.gameLayer.resize();
 
             //resize touchPad
-            this.touchPad.width = this.gameLayer.canvas_width / 2;
+            this.touchPad.width = this.gameLayer.canvas_width;
             this.touchPad.height = this.gameLayer.canvas_height;
 
         },
@@ -1534,8 +1711,8 @@ Ext.define('interactive.DraggableLayer', {
             this.gameLayer.add(this.shipFragments);
             this.sfx.play('boom');
         },
-        //TODO: handle touch events
         handleInput: function (event) {
+            var force;
             switch (event) {
 
             case 'right_keypress':
@@ -1566,6 +1743,36 @@ Ext.define('interactive.DraggableLayer', {
             case 'spacebar':
                 this.fireBullet();
                 break;
+
+            case 'click':
+                this.fireBullet();
+                break;
+
+            case 'drag':
+                //set rotational velocity from size of drag
+                if (this.thrustVector) {
+                    force = Math.abs(this.thrustVector.getOffsetY() / 500);
+                    if (force < 1) {
+                        force = force + 1;
+                    }
+                    if (force > 1.1) {
+                        force = 1.1;
+                    }
+                    this.ship.setThrust(-1 * force);
+                    //this.ship.turn_speed = (this.thrustVector.distance() / 100) * TWO_PI / 60;
+                    if (this.thrustVector.start.x < this.thrustVector.end.x) {
+                        this.ship.turnRight();
+                    } else if (this.thrustVector.start.x > this.thrustVector.end.x) {
+                        this.ship.turnLeft();
+                    }
+                }
+                break;
+
+            case 'dragend':
+                this.ship.stopTurning();
+                this.ship.stopThrust();
+                break;
+
 
             case 'resize':
                 this.resize();
@@ -1709,7 +1916,7 @@ Ext.define('interactive.DraggableLayer', {
         },
 
         PLAY: function (msg) {
-
+            var r;
             switch (msg) {
 
             case 'enter':
@@ -1720,7 +1927,7 @@ Ext.define('interactive.DraggableLayer', {
             case 'tick':
                 this.reset();
                 this.gameLayer.update();
-                for (var r = 0; r < this.rocks.length; r++) {
+                for (r = 0; r < this.rocks.length; r++) {
                     var rock = this.rocks[r];
                     //check for collisions
                     if (this.hitRock(this.ship, rock)) {
@@ -1785,7 +1992,7 @@ Ext.define('interactive.DraggableLayer', {
 
     });
 
-})();
+}());
 
 
 

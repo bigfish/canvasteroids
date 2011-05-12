@@ -1,0 +1,155 @@
+{
+    "projectName": "Project Name",
+    "licenseText": "Copyright(c) 2011 Company Name",
+    "builds": [
+        {
+            "name": "All Classes",
+            "target": "all-classes.js",
+            "options": {
+                "debug": true
+            },
+            "files": [
+                {
+                    "path": "../../lib/oop/",
+                    "name": "InitProps.js"
+                },
+                {
+                    "path": "../../lib/eventbus/",
+                    "name": "EventBus.js"
+                },
+                {
+                    "path": "../../lib/soundeffects/",
+                    "name": "SoundEffects.js"
+                },
+                {
+                    "path": "../../lib/controller/",
+                    "name": "Keyboard.js"
+                },
+                {
+                    "path": "../../lib/interactive/",
+                    "name": "Draggable.js"
+                },
+                {
+                    "path": "../../lib/canvasutils/",
+                    "name": "CanvasUtils.js"
+                },
+                {
+                    "path": "../../lib/collection/",
+                    "name": "Collection.js"
+                },
+                {
+                    "path": "../../lib/collision/",
+                    "name": "Collision.js"
+                },
+                {
+                    "path": "../../lib/interactive/",
+                    "name": "Clickable.js"
+                },
+                {
+                    "path": "../../lib/motion/",
+                    "name": "Velocity.js"
+                },
+                {
+                    "path": "../../lib/drawable/",
+                    "name": "Drawable.js"
+                },
+                {
+                    "path": "../../lib/geometry/",
+                    "name": "Point.js"
+                },
+                {
+                    "path": "../../lib/geometry/",
+                    "name": "Path.js"
+                },
+                {
+                    "path": "../../lib/geometry/",
+                    "name": "Shape.js"
+                },
+                {
+                    "path": "../../lib/sprites/",
+                    "name": "Sprite.js"
+                },
+                {
+                    "path": "../../lib/sprites/",
+                    "name": "Rock.js"
+                },
+                {
+                    "path": "../../lib/sprites/",
+                    "name": "ShipFragment.js"
+                },
+                {
+                    "path": "../../lib/geometry/",
+                    "name": "Square.js"
+                },
+                {
+                    "path": "../../lib/drawable/",
+                    "name": "DrawableSquare.js"
+                },
+                {
+                    "path": "../../lib/ui/",
+                    "name": "Component.js"
+                },
+                {
+                    "path": "../../lib/controller/",
+                    "name": "TouchPad.js"
+                },
+                {
+                    "path": "../../lib/ui/",
+                    "name": "Button.js"
+                },
+                {
+                    "path": "../../lib/sprites/",
+                    "name": "Point.js"
+                },
+                {
+                    "path": "../../lib/sprites/",
+                    "name": "Bullet.js"
+                },
+                {
+                    "path": "../../lib/sprites/",
+                    "name": "Ship.js"
+                },
+                {
+                    "path": "../../lib/geometry/",
+                    "name": "Plane.js"
+                },
+                {
+                    "path": "../../lib/canvasutils/",
+                    "name": "Context2D.js"
+                },
+                {
+                    "path": "../../lib/drawable/",
+                    "name": "Layer.js"
+                },
+                {
+                    "path": "../../lib/interactive/",
+                    "name": "ClickableLayer.js"
+                },
+                {
+                    "path": "../../lib/interactive/",
+                    "name": "DraggableLayer.js"
+                },
+                {
+                    "path": "",
+                    "name": "Asteroids.js"
+                }
+            ]
+        },
+        {
+            "name": "Application - Production",
+            "target": "app-all.js",
+            "compress": true,
+            "files": [
+                {
+                    "path": "",
+                    "name": "all-classes.js"
+                },
+                {
+                    "path": "",
+                    "name": "app.js"
+                }
+            ]
+        }
+    ],
+    "resources": []
+}

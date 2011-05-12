@@ -98,27 +98,34 @@
             if (evt === "start") {
                 //set timer to start thrust
                 this.thrustTimeout = setTimeout(function () {
-                    self.thrustVector = new drawable.DrawableLine({
+                    self.thrustVectorLine = new drawable.DrawableLine({
                         start: drag.start,
                         end: drag.end,
                         context: self.gameLayer
                     });
-                    self.gameLayer.add(self.thrustVector);
+                    self.gameLayer.add(self.thrustVectorLine);
+                    self.thrustVector = drag;
                 }, 250);
             }
 
+            if (evt === "drag") {
+                this.state("drag");
+            }
+
             if (evt === "end") {
-                //cancel thrust action if it hasn't happened yet
-                if (this.thrustTimeout) {
+
+                if (this.thrustVectorLine) {
+                    this.gameLayer.remove(this.thrustVectorLine);
+                    this.thrustVectorLine = null;
+                } else if (this.thrustTimeout) {
+                    //cancel thrust action if it hasn't happened yet
                     clearTimeout(this.thrustTimeout);
                     //fire bullet since this was a click or tap event
                     this.state("click");
-                    this.thrustTimeout = null;
                 }
-                if (this.thrustVector) {
-                    this.gameLayer.remove(this.thrustVector);
-                    this.thrustVector = null;
-                }
+                this.thrustVector = null;
+                this.thrustTimeout = null;
+                this.state("dragend");
             }
         },
 
@@ -312,7 +319,7 @@
             this.gameLayer.resize();
 
             //resize touchPad
-            this.touchPad.width = this.gameLayer.canvas_width / 2;
+            this.touchPad.width = this.gameLayer.canvas_width;
             this.touchPad.height = this.gameLayer.canvas_height;
 
         },
@@ -355,8 +362,8 @@
             this.gameLayer.add(this.shipFragments);
             this.sfx.play('boom');
         },
-        //TODO: handle touch events
         handleInput: function (event) {
+            var force;
             switch (event) {
 
             case 'right_keypress':
@@ -391,6 +398,32 @@
             case 'click':
                 this.fireBullet();
                 break;
+
+            case 'drag':
+                //set rotational velocity from size of drag
+                if (this.thrustVector) {
+                    force = Math.abs(this.thrustVector.getOffsetY() / 500);
+                    if (force < 1) {
+                        force = force + 1;
+                    }
+                    if (force > 1.1) {
+                        force = 1.1;
+                    }
+                    this.ship.setThrust(-1 * force);
+                    //this.ship.turn_speed = (this.thrustVector.distance() / 100) * TWO_PI / 60;
+                    if (this.thrustVector.start.x < this.thrustVector.end.x) {
+                        this.ship.turnRight();
+                    } else if (this.thrustVector.start.x > this.thrustVector.end.x) {
+                        this.ship.turnLeft();
+                    }
+                }
+                break;
+
+            case 'dragend':
+                this.ship.stopTurning();
+                this.ship.stopThrust();
+                break;
+
 
             case 'resize':
                 this.resize();

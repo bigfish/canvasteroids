@@ -422,6 +422,7 @@
 
             }
         },
+
         INTERACTIVE: function (msg) {
 
             var force;
@@ -462,22 +463,35 @@
                 break;
 
             case 'drag':
+                //we want left-right dragging to control rotation
+                //and up-down dragging to control thrust
+                //to make the ship easier to control
+                //these are exclusive -- the axis with the greater magnitude
+                //component of the drag vector is used
                 //set rotational velocity from size of drag
                 if (this.thrustVector) {
-                    force = Math.abs(this.thrustVector.getOffsetY() / 500);
-                    if (force < 1) {
-                        force = force + 1;
+
+                    if (Math.abs(this.thrustVector.getOffsetX()) > Math.abs(this.thrustVector.getOffsetY())) {
+                        //do rotation if offset is above threshold
+                        if (Math.abs(this.thrustVector.getOffsetX()) > 10) {
+                            if (this.thrustVector.end.x > this.thrustVector.start.x) {
+                                this.ship.turnRight();
+                            } else {
+                                this.ship.turnLeft();
+                            }
+                        }
+                    } else {
+                        //do thrust 
+                        force = Math.abs(this.thrustVector.getOffsetY() / 500);
+                        if (force < 1) {
+                            force = force + 1;
+                        }
+                        if (force > 1.1) {
+                            force = 1.1;
+                        }
+                        this.ship.setThrust(-1 * force);
                     }
-                    if (force > 1.1) {
-                        force = 1.1;
-                    }
-                    this.ship.setThrust(-1 * force);
                     //this.ship.turn_speed = (this.thrustVector.distance() / 100) * TWO_PI / 60;
-                    if (this.thrustVector.start.x < this.thrustVector.end.x) {
-                        this.ship.turnRight();
-                    } else if (this.thrustVector.start.x > this.thrustVector.end.x) {
-                        this.ship.turnLeft();
-                    }
                 }
                 break;
 

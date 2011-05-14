@@ -70,7 +70,6 @@ Ext.define('soundeffects.SoundEffects', {
         },
 
         loadSounds: function () {
-            console.log("loadSounds", this.sounds);
             for (var sound in this.sounds) {
                 if (this.sounds.hasOwnProperty(sound)) {
                     window.soundManager.createSound({
@@ -760,7 +759,7 @@ Ext.define('controller.TouchPad', {
     mixins: ['interactive.Draggable'],
     constructor: function (props) {
         this.callParent(this.applyProps(props, {
-            strokeStyle: "#FF0000",
+            strokeStyle: "",
             width: 200,
             height: 200,
             drags: {},
@@ -1114,7 +1113,6 @@ Ext.define('canvasutils.Context2D', {
         }
         this.width = this.canvas_width;
         this.height = this.canvas_height;
-        console.log("resized to ", this.width, this.height);
         this.canvas.setAttribute('width', this.canvas_width);
         this.canvas.setAttribute('height', this.canvas_height);
     },
@@ -1193,22 +1191,18 @@ Ext.define('interactive.ClickableLayer', {
     },
 
 /*onMouseDown: function (event) {
-        console.log('mousedown', event);
         this.handleEvent('mousedown', event);
     },
 
     onMouseMove: function (event) {
-        console.log('mousemove', event);
         this.handleEvent('mousemove', event);
     },
 
     onMouseUp: function (event) {
-        console.log('mouseup', event);
         this.handleEvent('mouseup', event);
     },*/
 
     onClick: function (event) {
-        console.log('click', event);
         this.handleEvent('click', event);
     },
 
@@ -1322,7 +1316,6 @@ Ext.define('interactive.DraggableLayer', {
     },
 
     _enddrag: function (event) {
-        //console.log("enddrag", event);
         this.handleEvent('enddrag', event);
     },
 
@@ -1447,12 +1440,6 @@ Ext.define('interactive.DraggableLayer', {
             if (evt === "start") {
                 //set timer to start thrust
                 this.thrustTimeout = setTimeout(function () {
-                    self.thrustVectorLine = new drawable.DrawableLine({
-                        start: drag.start,
-                        end: drag.end,
-                        context: self.gameLayer
-                    });
-                    self.gameLayer.add(self.thrustVectorLine);
                     self.thrustVector = drag;
                 }, 250);
             }
@@ -1463,10 +1450,7 @@ Ext.define('interactive.DraggableLayer', {
 
             if (evt === "end") {
 
-                if (this.thrustVectorLine) {
-                    this.gameLayer.remove(this.thrustVectorLine);
-                    this.thrustVectorLine = null;
-                } else if (this.thrustTimeout) {
+                if (this.thrustTimeout) {
                     //cancel thrust action if it hasn't happened yet
                     clearTimeout(this.thrustTimeout);
                     //fire bullet since this was a click or tap event
@@ -1711,78 +1695,7 @@ Ext.define('interactive.DraggableLayer', {
             this.gameLayer.add(this.shipFragments);
             this.sfx.play('boom');
         },
-        handleInput: function (event) {
-            var force;
-            switch (event) {
 
-            case 'right_keypress':
-                this.ship.turnRight();
-                break;
-
-            case 'left_keypress':
-                this.ship.turnLeft();
-                break;
-
-            case 'left_keyup':
-                this.ship.stopTurningLeft();
-                break;
-
-            case 'right_keyup':
-                this.ship.stopTurningRight();
-                break;
-
-            case 'up_keypress':
-                this.ship.startThrust();
-                this.sfx.play('thrust');
-                break;
-
-            case 'up_keyup':
-                this.ship.stopThrust();
-                break;
-
-            case 'spacebar':
-                this.fireBullet();
-                break;
-
-            case 'click':
-                this.fireBullet();
-                break;
-
-            case 'drag':
-                //set rotational velocity from size of drag
-                if (this.thrustVector) {
-                    force = Math.abs(this.thrustVector.getOffsetY() / 500);
-                    if (force < 1) {
-                        force = force + 1;
-                    }
-                    if (force > 1.1) {
-                        force = 1.1;
-                    }
-                    this.ship.setThrust(-1 * force);
-                    //this.ship.turn_speed = (this.thrustVector.distance() / 100) * TWO_PI / 60;
-                    if (this.thrustVector.start.x < this.thrustVector.end.x) {
-                        this.ship.turnRight();
-                    } else if (this.thrustVector.start.x > this.thrustVector.end.x) {
-                        this.ship.turnLeft();
-                    }
-                }
-                break;
-
-            case 'dragend':
-                this.ship.stopTurning();
-                this.ship.stopThrust();
-                break;
-
-
-            case 'resize':
-                this.resize();
-                this.reset();
-                break;
-
-            default:
-
-            }
-        },
 
         onKeyPress: function (key) {
 
@@ -1828,6 +1741,103 @@ Ext.define('interactive.DraggableLayer', {
             }
         },
 
+        //state functions
+        BASE: function (msg) {
+
+            switch (msg) {
+
+            case 'resize':
+                this.resize();
+                this.reset();
+                break;
+
+            default:
+
+            }
+        },
+
+        INTERACTIVE: function (msg) {
+
+            var force;
+
+            switch (msg) {
+
+            case 'right_keypress':
+                this.ship.turnRight();
+                break;
+
+            case 'left_keypress':
+                this.ship.turnLeft();
+                break;
+
+            case 'left_keyup':
+                this.ship.stopTurningLeft();
+                break;
+
+            case 'right_keyup':
+                this.ship.stopTurningRight();
+                break;
+
+            case 'up_keypress':
+                this.ship.startThrust();
+                this.sfx.play('thrust');
+                break;
+
+            case 'up_keyup':
+                this.ship.stopThrust();
+                break;
+
+            case 'spacebar':
+                this.fireBullet();
+                break;
+
+            case 'click':
+                this.fireBullet();
+                break;
+
+            case 'drag':
+                //we want left-right dragging to control rotation
+                //and up-down dragging to control thrust
+                //to make the ship easier to control
+                //these are exclusive -- the axis with the greater magnitude
+                //component of the drag vector is used
+                //set rotational velocity from size of drag
+                if (this.thrustVector) {
+
+                    if (Math.abs(this.thrustVector.getOffsetX()) > Math.abs(this.thrustVector.getOffsetY())) {
+                        //do rotation if offset is above threshold
+                        if (Math.abs(this.thrustVector.getOffsetX()) > 10) {
+                            if (this.thrustVector.end.x > this.thrustVector.start.x) {
+                                this.ship.turnRight();
+                            } else {
+                                this.ship.turnLeft();
+                            }
+                        }
+                    } else {
+                        //do thrust 
+                        force = Math.abs(this.thrustVector.getOffsetY() / 500);
+                        if (force < 1) {
+                            force = force + 1;
+                        }
+                        if (force > 1.1) {
+                            force = 1.1;
+                        }
+                        this.ship.setThrust(-1 * force);
+                    }
+                    //this.ship.turn_speed = (this.thrustVector.distance() / 100) * TWO_PI / 60;
+                }
+                break;
+
+            case 'dragend':
+                this.ship.stopTurning();
+                this.ship.stopThrust();
+                break;
+
+            default:
+                this.BASE(msg);
+            }
+        },
+
         START_GAME: function (msg) {
             var me = this;
 
@@ -1853,7 +1863,7 @@ Ext.define('interactive.DraggableLayer', {
                 break;
 
             default:
-                this.handleInput(msg);
+                this.BASE(msg);
             }
         },
 
@@ -1879,7 +1889,7 @@ Ext.define('interactive.DraggableLayer', {
                 break;
 
             default:
-                this.handleInput(msg);
+                this.INTERACTIVE(msg);
             }
         },
 
@@ -1903,15 +1913,11 @@ Ext.define('interactive.DraggableLayer', {
                 }
                 break;
 
-            case 'resize':
-                this.resize();
-                this.reset();
-                break;
-
             case 'exit':
                 break;
 
             default:
+                this.BASE(msg);
             }
         },
 
@@ -1951,7 +1957,7 @@ Ext.define('interactive.DraggableLayer', {
                 break;
 
             default:
-                this.handleInput(msg);
+                this.INTERACTIVE(msg);
             }
 
         },
@@ -1975,18 +1981,13 @@ Ext.define('interactive.DraggableLayer', {
                 this.gameLayer.render();
                 break;
 
-            case 'resize':
-
-                this.resize();
-                this.reset();
-                break;
-
             case 'exit':
                 //remove ship fragments
                 this.gameLayer.remove(this.shipFragments);
                 break;
 
             default:
+                this.BASE(msg);
             }
         }
 

@@ -362,9 +362,71 @@
             this.gameLayer.add(this.shipFragments);
             this.sfx.play('boom');
         },
-        handleInput: function (event) {
+
+
+        onKeyPress: function (key) {
+
+            switch (key) {
+            case 'left':
+                this.state('left_keypress');
+                break;
+
+            case 'right':
+                this.state('right_keypress');
+                break;
+
+            case 'up':
+                this.state('up_keypress');
+                break;
+
+            case 'space':
+                this.state('spacebar');
+                break;
+
+            default:
+                // code
+            }
+        },
+
+        onKeyUp: function (key) {
+
+            switch (key) {
+            case 'left':
+                this.state('left_keyup');
+                break;
+
+            case 'right':
+                this.state('right_keyup');
+                break;
+
+            case 'up':
+                this.state('up_keyup');
+                break;
+
+            default:
+                // code
+            }
+        },
+
+        //state functions
+        BASE: function (msg) {
+
+            switch (msg) {
+
+            case 'resize':
+                this.resize();
+                this.reset();
+                break;
+
+            default:
+
+            }
+        },
+        INTERACTIVE: function (msg) {
+
             var force;
-            switch (event) {
+
+            switch (msg) {
 
             case 'right_keypress':
                 this.ship.turnRight();
@@ -424,58 +486,8 @@
                 this.ship.stopThrust();
                 break;
 
-
-            case 'resize':
-                this.resize();
-                this.reset();
-                break;
-
             default:
-
-            }
-        },
-
-        onKeyPress: function (key) {
-
-            switch (key) {
-            case 'left':
-                this.state('left_keypress');
-                break;
-
-            case 'right':
-                this.state('right_keypress');
-                break;
-
-            case 'up':
-                this.state('up_keypress');
-                break;
-
-            case 'space':
-                this.state('spacebar');
-                break;
-
-            default:
-                // code
-            }
-        },
-
-        onKeyUp: function (key) {
-
-            switch (key) {
-            case 'left':
-                this.state('left_keyup');
-                break;
-
-            case 'right':
-                this.state('right_keyup');
-                break;
-
-            case 'up':
-                this.state('up_keyup');
-                break;
-
-            default:
-                // code
+                this.BASE(msg);
             }
         },
 
@@ -504,7 +516,7 @@
                 break;
 
             default:
-                this.handleInput(msg);
+                this.BASE(msg);
             }
         },
 
@@ -530,7 +542,7 @@
                 break;
 
             default:
-                this.handleInput(msg);
+                this.INTERACTIVE(msg);
             }
         },
 
@@ -554,15 +566,11 @@
                 }
                 break;
 
-            case 'resize':
-                this.resize();
-                this.reset();
-                break;
-
             case 'exit':
                 break;
 
             default:
+                this.BASE(msg);
             }
         },
 
@@ -602,7 +610,7 @@
                 break;
 
             default:
-                this.handleInput(msg);
+                this.INTERACTIVE(msg);
             }
 
         },
@@ -626,18 +634,13 @@
                 this.gameLayer.render();
                 break;
 
-            case 'resize':
-
-                this.resize();
-                this.reset();
-                break;
-
             case 'exit':
                 //remove ship fragments
                 this.gameLayer.remove(this.shipFragments);
                 break;
 
             default:
+                this.BASE(msg);
             }
         }
 

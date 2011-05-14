@@ -98,12 +98,6 @@
             if (evt === "start") {
                 //set timer to start thrust
                 this.thrustTimeout = setTimeout(function () {
-                    self.thrustVectorLine = new drawable.DrawableLine({
-                        start: drag.start,
-                        end: drag.end,
-                        context: self.gameLayer
-                    });
-                    self.gameLayer.add(self.thrustVectorLine);
                     self.thrustVector = drag;
                 }, 250);
             }
@@ -114,10 +108,7 @@
 
             if (evt === "end") {
 
-                if (this.thrustVectorLine) {
-                    this.gameLayer.remove(this.thrustVectorLine);
-                    this.thrustVectorLine = null;
-                } else if (this.thrustTimeout) {
+                if (this.thrustTimeout) {
                     //cancel thrust action if it hasn't happened yet
                     clearTimeout(this.thrustTimeout);
                     //fire bullet since this was a click or tap event

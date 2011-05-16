@@ -1826,7 +1826,7 @@ Ext.define('interactive.DraggableLayer', {
                     } else {
 
                         //do thrust 
-                        force = -1 * this.thrustVector.getOffsetY() / 500;
+                        force = -1 * this.thrustVector.getOffsetY() / 200;
                         if (force < 0) {
                             //force = force + 1;
                             force = 0;

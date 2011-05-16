@@ -89,6 +89,7 @@
             });
 
             this.sfx = soundeffects.SoundEffects;
+
         },
 
         onTouch: function (evt, x, y, id, drag) {
@@ -304,10 +305,11 @@
 
         resize: function () {
 
+            this.gameLayer.resize();
+
             //recenter button
             this.startButton.x = this.gameLayer.canvas_width / 2 - this.startButton.width / 2;
             this.startButton.y = this.gameLayer.canvas_height / 2 - this.startButton.height / 2;
-            this.gameLayer.resize();
 
             //resize touchPad
             this.touchPad.width = this.gameLayer.canvas_width;
@@ -459,10 +461,10 @@
                 //to make the ship easier to control
                 //these are exclusive -- the axis with the greater magnitude
                 //component of the drag vector is used
-                //set rotational velocity from size of drag
                 if (this.thrustVector) {
 
                     if (Math.abs(this.thrustVector.getOffsetX()) > Math.abs(this.thrustVector.getOffsetY())) {
+
                         //do rotation if offset is above threshold
                         if (Math.abs(this.thrustVector.getOffsetX()) > 10) {
                             if (this.thrustVector.end.x > this.thrustVector.start.x) {
@@ -471,6 +473,7 @@
                                 this.ship.turnLeft();
                             }
                         }
+
                     } else {
                         //do thrust 
                         force = Math.abs(this.thrustVector.getOffsetY() / 500);

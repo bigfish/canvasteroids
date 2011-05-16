@@ -4,6 +4,9 @@
     var RND = function (max) {
             return Math.random() * max;
         };
+    var ANG2RAD = function (a) {
+            return a * TWO_PI / 180;
+        };
     var FPS = 30;
     var LEVEL = 1;
     var TIMER;
@@ -91,7 +94,6 @@
             this.sfx = soundeffects.SoundEffects;
 
         },
-
         onTouch: function (evt, x, y, id, drag) {
             //a slow drag changes thrust
             //a click or tap fires
@@ -100,6 +102,7 @@
                 //set timer to start thrust
                 this.thrustTimeout = setTimeout(function () {
                     self.thrustVector = drag;
+                    self.state("dragstart");
                 }, 250);
             }
 
@@ -455,6 +458,12 @@
                 this.fireBullet();
                 break;
 
+            case 'dragstart':
+                //disable any turning velocity
+                this.ship.stopTurning();
+                this.prevDragOffsetX = 0;
+                break;
+
             case 'drag':
                 //we want left-right dragging to control rotation
                 //and up-down dragging to control thrust
@@ -465,20 +474,16 @@
 
                     if (Math.abs(this.thrustVector.getOffsetX()) > Math.abs(this.thrustVector.getOffsetY())) {
 
-                        //do rotation if offset is above threshold
-                        if (Math.abs(this.thrustVector.getOffsetX()) > 10) {
-                            if (this.thrustVector.end.x > this.thrustVector.start.x) {
-                                this.ship.turnRight();
-                            } else {
-                                this.ship.turnLeft();
-                            }
-                        }
+                        this.ship.rotation += ANG2RAD((this.thrustVector.getOffsetX() - this.prevDragOffsetX) * 0.3);
+                        this.prevDragOffsetX = this.thrustVector.getOffsetX();
 
                     } else {
+
                         //do thrust 
-                        force = Math.abs(this.thrustVector.getOffsetY() / 500);
-                        if (force < 1) {
-                            force = force + 1;
+                        force = -1 * this.thrustVector.getOffsetY() / 200;
+                        if (force < 0) {
+                            //force = force + 1;
+                            force = 0;
                         }
                         if (force > 1.1) {
                             force = 1.1;
@@ -490,7 +495,6 @@
                 break;
 
             case 'dragend':
-                this.ship.stopTurning();
                 this.ship.stopThrust();
                 break;
 

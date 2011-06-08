@@ -1,12 +1,23 @@
-## CanvaSteroids
-
+# CanvaSteroids
 ### A Javascript Library for HTML Canvas Games using ExtJS 4 
 
-Sorry, no documentation as yet. Best thing is to have a look at a game... so far just Asteroids is done.
+## Game Controls
+> * Left Arrow Key  - Turn ship left
+> * Right Arrow Key - Turn ship right
+> * Up Arrow Key    - Propel ship forward
+> * Down Arrow Key  - Warp to safe location (*not implemented*)
 
-My plan is to develop the library by developing games using it, and adding features & refactoring in the process. 
+## Completed Tasks
+> + Asteroids
+> + Thruster sound
+> + Death sound
 
-Wont work in IE < 9... will be using Chrome Frame as fallback for non Canvas enabled IEs. 
+## Issues
+> - Will not work in IE < 9, uses Chrome Frame as fallback for non Canvas enabled IEs
+> - Timing of sounds is late
+> - Sounds does not work when running program locally
+> - Life counter not present
+> - Random warp key; user can warp to safe spot through times of extreme danger
 
-[http://canvasteroids.com](http://canvasteroids.com)
+[Play the game](http://canvasteroids.com)
 

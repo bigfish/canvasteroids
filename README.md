@@ -2,13 +2,13 @@
 ### A Javascript Library for HTML Canvas Games using ExtJS 4 
 
 ## Game Controls
-> * Left Arrow Key  - Turn ship left
+> * Left Arrow Key - Turn ship left
 > * Right Arrow Key - Turn ship right
-> * Up Arrow Key    - Propel ship forward
-> * Down Arrow Key  - Warp to safe location (*not implemented*)
+> * Up Arrow Key - Propel ship forward
+> * Down Arrow Key - Warp to safe location (*not implemented*)
 
 > * Mouse Drag Horizontal - Control ship rotation
-> * Mouse Drag Vertical   - Control ship thrust
+> * Mouse Drag Vertical - Control ship thrust
 
 ## Completed Tasks
 > + Asteroids

@@ -7,6 +7,9 @@
 > * Up Arrow Key    - Propel ship forward
 > * Down Arrow Key  - Warp to safe location (*not implemented*)
 
+> * Mouse Drag Horizontal - Control ship rotation
+> * Mouse Drag Vertical   - Control ship thrust
+
 ## Completed Tasks
 > + Asteroids
 > + Thruster sound

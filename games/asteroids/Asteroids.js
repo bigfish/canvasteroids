@@ -392,6 +392,10 @@
             case 'space':
                 this.state('spacebar');
                 break;
+                
+            case 'down':
+                this.state('down_keypress');
+                break;
 
             default:
                 // code
@@ -466,6 +470,10 @@
 
             case 'spacebar':
                 this.fireBullet();
+                break;
+                
+            case 'down_keypress':
+                this.ship.hyperspace();
                 break;
 
             case 'click':

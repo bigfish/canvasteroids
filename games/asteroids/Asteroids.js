@@ -12,6 +12,8 @@
     var TIMER;
     var MAX_BULLETS = 25;
     var MAX_SPEED = 15;
+    var DELAY = 3000;
+    var LIVES = 3;
     //initialize canvas and clear screen
     Ext.define('Asteroids', {
 
@@ -82,6 +84,17 @@
                 context: this.gameLayer
             });
             this.gameLayer.add(this.startButton);
+                  
+			this.endButton = new ui.Button({
+		        text: "You Lose",
+		        width: 120,
+		        height: 40,
+		        x: this.gameLayer.width / 2 - 100,
+		        y: this.gameLayer.height / 2 - 20,
+		        active: false,
+		        context: this.gameLayer
+		    });
+		    this.gameLayer.add(this.endButton);
 
             soundeffects.SoundEffects.defineSounds({
                 'laser': '../../lib/sounds/laser.mp3',
@@ -310,9 +323,11 @@
 
             this.gameLayer.resize();
 
-            //recenter button
+            //recenter buttons
             this.startButton.x = this.gameLayer.canvas_width / 2 - this.startButton.width / 2;
             this.startButton.y = this.gameLayer.canvas_height / 2 - this.startButton.height / 2;
+            this.endButton.x = this.gameLayer.canvas_width / 2 - this.endButton.width / 2;
+            this.endButton.y = this.gameLayer.canvas_height / 2 - this.endButton.height / 2;
 
             //resize touchPad
             this.touchPad.width = this.gameLayer.canvas_width;
@@ -325,7 +340,6 @@
         },
 
         explodeShip: function (ship) {
-
             this.ship.active = false;
             this.shipFragments = [new sprites.ShipFragment({
                 x: ship.x + ship.points[0].x,
@@ -505,15 +519,15 @@
 
         START_GAME: function (msg) {
             var me = this;
-
-            this.startButton.active = true;
-            this.startButton.onClick(function () {
-                this.changeState(this.START_LIFE);
-            }, this);
-
+			
             switch (msg) {
 
             case 'enter':
+            	this.livesLeft = LIVES;
+		        this.startButton.active = true;
+		        this.startButton.onClick(function () {
+		            this.changeState(this.START_LIFE);
+		        }, this);
                 this.makeRocks();
                 this.startTimer();
                 break;
@@ -532,15 +546,42 @@
             }
         },
 
+        END_GAME: function (msg) {
+            var me = this;
+            
+            switch (msg) {
 
+            case 'enter':
+            	this.endButton.active = true;
+		        this.endButton.onClick(function () {
+		            this.changeState(this.START_GAME);
+		        }, this);
+                break;
+
+            case 'tick':
+            	this.removeAllRocks();
+                this.reset();
+                this.gameLayer.update();
+                this.gameLayer.render();
+                break;
+
+            case 'exit':
+                break;
+
+            default:
+                this.BASE(msg);
+            }
+        },
+        
         END_LEVEL: function (msg) {
             var me = this;
+
             switch (msg) {
 
             case 'enter':
                 setTimeout(function () {
                     me.startLevel();
-                }, 5000);
+                }, DELAY);
                 this.startTimer();
                 break;
 
@@ -565,6 +606,7 @@
 
             case 'enter':
                 this.startButton.active = false;
+                this.endButton.active = false;
                 this.ship.init();
                 this.startTimer();
                 break;
@@ -632,11 +674,20 @@
             switch (msg) {
 
             case 'enter':
-                this.startTimer();
-                //set time-limit on this state
-                setTimeout(function () {
-                    me.changeState(me.START_LIFE);
-                }, 5000);
+            	this.livesLeft = this.livesLeft - 1;
+                if(this.livesLeft >= 1) {
+		            //set time-limit on this state
+			        setTimeout(function () {
+			            me.changeState(me.START_LIFE);
+			        }, DELAY);
+			    }
+			    else {
+			    	//set time-limit on this state
+			    	this.startTimer();
+			        setTimeout(function () {
+			            me.changeState(me.END_GAME);
+			        }, DELAY);
+			    }
                 break;
 
             case 'tick':

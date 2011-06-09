@@ -85,16 +85,16 @@
             });
             this.gameLayer.add(this.startButton);
                   
-			this.endButton = new ui.Button({
-		        text: "You Lose",
-		        width: 120,
-		        height: 40,
-		        x: this.gameLayer.width / 2 - 100,
-		        y: this.gameLayer.height / 2 - 20,
-		        active: false,
-		        context: this.gameLayer
-		    });
-		    this.gameLayer.add(this.endButton);
+            this.endButton = new ui.Button({
+                text: "You Lose",
+                width: 120,
+                height: 40,
+                x: this.gameLayer.width / 2 - 100,
+                y: this.gameLayer.height / 2 - 20,
+                active: false,
+                context: this.gameLayer
+            });
+            this.gameLayer.add(this.endButton);
 
             soundeffects.SoundEffects.defineSounds({
                 'laser': '../../lib/sounds/laser.mp3',
@@ -523,11 +523,11 @@
             switch (msg) {
 
             case 'enter':
-            	this.livesLeft = LIVES;
-		        this.startButton.active = true;
-		        this.startButton.onClick(function () {
-		            this.changeState(this.START_LIFE);
-		        }, this);
+                this.livesLeft = LIVES;
+                this.startButton.active = true;
+                this.startButton.onClick(function () {
+                    this.changeState(this.START_LIFE);
+                }, this);
                 this.makeRocks();
                 this.startTimer();
                 break;

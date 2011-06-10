@@ -19,7 +19,7 @@
 
         extend: 'oop.InitProps',
 
-        requires: ['eventbus.EventBus', 'controller.TouchPad', 'drawable.DrawableLine', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'interactive.DraggableLayer'],
+        requires: ['eventbus.EventBus', 'controller.TouchPad', 'drawable.DrawableLine', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'ui.Text', 'interactive.DraggableLayer'],
 
         constructor: function (props) {
             this.callParent([props]);
@@ -97,6 +97,50 @@
                 context: this.gameLayer
             });
             this.gameLayer.add(this.endButton);
+            
+            this.scoreText = new ui.Text({
+                text: "SCORE:",
+                width: 100,
+                height: 40,
+                x: 3,
+                y: 3,
+                active: true,
+                context: this.gameLayer
+            });
+            this.gameLayer.add(this.scoreText);
+            
+            this.scoreCountText = new ui.Text({
+                text: "0",
+                width: 180,
+                height: 40,
+                x: 100,
+                y: 3,
+                active: true,
+                context: this.gameLayer
+            });
+            this.gameLayer.add(this.scoreCountText);
+            
+            this.livesText = new ui.Text({
+                text: "LIVES:",
+                width: 10,
+                height: 40,
+                x: 240,
+                y: 3,
+                active: true,
+                context: this.gameLayer
+            });
+            this.gameLayer.add(this.livesText); 
+                       
+            this.livesCountText = new ui.Text({
+                text: LIVES,
+                width: 180,
+                height: 40,
+                x: 325,
+                y: 3,
+                active: true,
+                context: this.gameLayer
+            });
+            this.gameLayer.add(this.livesCountText);
 
             soundeffects.SoundEffects.defineSounds({
                 'laser': '../../lib/sounds/laser.mp3',
@@ -241,6 +285,7 @@
         },
 
         fireBullet: function () {
+            this.editScore(-1);
             var bulletSpeed = 8;
             //bullet should initially be at the tip of the space ship
             //moving away (up) 
@@ -266,6 +311,7 @@
                 //this function is called while the current transformation matrix
                 //has a translation applied to it, so we need to use the polyfill
                 if (rock.containsPoint(bullet.x, bullet.y)) {
+                    this.editScore(+10);
                     this.removeBullet(bullet);
                     return true;
                 }
@@ -277,6 +323,7 @@
             var newRock, rock_conf, i;
             //only create new rocks if it is not the smallest size
             if (rock.size > 1) {
+                this.editScore(+100);
                 for (i = 0; i < 3; i++) {
                     this.addRock(new sprites.Rock({
                         context: this.gameLayer,
@@ -373,6 +420,7 @@
             })];
             this.gameLayer.add(this.shipFragments);
             this.sfx.play('boom');
+            this.editScore(-1000);
         },
 
 
@@ -454,6 +502,16 @@
             default:
                 // code
             }
+        },
+        
+        editLivesLeft: function(livesChange) {
+            this.livesLeft = this.livesLeft + livesChange;
+            this.livesCountText.text = this.livesLeft;
+        },
+        
+        editScore: function(scoreChange) {
+            this.score = this.score + scoreChange;
+            this.scoreCountText.text = this.score;
         },
 
         //state functions
@@ -577,7 +635,10 @@
             switch (msg) {
 
             case 'enter':
+                this.score = 0;
+                this.editScore(0);
                 this.livesLeft = LIVES;
+                this.editLivesLeft(0);
                 this.startButton.active = true;
                 this.startButton.onClick(function () {
                     this.changeState(this.START_LIFE);
@@ -614,6 +675,7 @@
 
             case 'tick':
             	this.removeAllRocks();
+            	this.removeAllBullets();
                 this.reset();
                 this.gameLayer.update();
                 this.gameLayer.render();
@@ -633,6 +695,7 @@
             switch (msg) {
 
             case 'enter':
+                this.editLivesLeft(+1);
                 setTimeout(function () {
                     me.startLevel();
                 }, DELAY);
@@ -741,7 +804,7 @@
             switch (msg) {
 
             case 'enter':
-            	this.livesLeft = this.livesLeft - 1;
+            	this.editLivesLeft(-1);
                 if(this.livesLeft >= 1) {
 		            //set time-limit on this state
 		            this.startTimer();

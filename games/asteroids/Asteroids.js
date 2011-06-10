@@ -744,6 +744,7 @@
             	this.livesLeft = this.livesLeft - 1;
                 if(this.livesLeft >= 1) {
 		            //set time-limit on this state
+		            this.startTimer();
 			        setTimeout(function () {
 			            me.changeState(me.START_LIFE);
 			        }, DELAY);

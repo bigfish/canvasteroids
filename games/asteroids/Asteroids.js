@@ -25,6 +25,8 @@
             this.callParent([props]);
             this.rocks = [];
             this.bullets = [];
+            this.antiSpamBullets = 0;
+            this.antiSpamWarp = 0;
             var self = this;
             //handle window resizes
             window.onresize = function () {
@@ -390,11 +392,27 @@
                 break;
 
             case 'space':
-                this.state('spacebar');
+                this.state('spacebar_keypress');
                 break;
                 
             case 'down':
                 this.state('down_keypress');
+                break;
+                
+            case 'w':
+                this.state('up_keypress');
+                break;
+                
+            case 'a':
+                this.state('left_keypress');
+                break;
+                
+            case 's':
+                this.state('down_keypress');
+                break;
+                
+            case 'd':
+                this.state('right_keypress');
                 break;
 
             default:
@@ -415,6 +433,22 @@
 
             case 'up':
                 this.state('up_keyup');
+                break;
+                
+            case 'space':
+                this.state('spacebar_keyup');
+                break;
+                
+            case 'w':
+                this.state('up_keyup');
+                break;
+                
+            case 'a':
+                this.state('left_keyup');
+                break;
+                
+            case 'd':
+                this.state('right_keyup');
                 break;
 
             default:
@@ -468,12 +502,24 @@
                 this.ship.stopThrust();
                 break;
 
-            case 'spacebar':
+            case 'spacebar_keypress':
+                // Only fire a bullet if the key is held every serveral ticks.
+                // (See the PLAy function.)
+                if(this.antiSpamBullets == 0) {
+                  this.fireBullet();
+                  this.antiSpamBullets++;
+                }
+                break;
+
+            case 'spacebar_keyup':
                 this.fireBullet();
                 break;
                 
             case 'down_keypress':
-                this.ship.hyperspace();
+                if(this.antiSpamWarp == 0) {
+                  this.ship.hyperspace();
+                  this.antiSpamWarp++;
+                }
                 break;
 
             case 'click':
@@ -664,6 +710,19 @@
                 if (!this.rocksLeft()) {
                     this.changeState(this.END_LEVEL);
                 }
+                
+                if(this.antiSpamWarp >= 1 && this.antiSpamWarp < 8) {
+                  this.antiSpamWarp++;
+                } else {
+                  this.antiSpamWarp = 0;
+                }
+                
+                if(this.antiSpamBullets >= 1 && this.antiSpamBullets < 6) {
+                  this.antiSpamBullets++;
+                } else {
+                  this.antiSpamBullets = 0;
+                }
+                
                 break;
 
             case 'exit':

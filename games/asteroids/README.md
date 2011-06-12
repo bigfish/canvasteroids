@@ -5,10 +5,9 @@
 > * Right Arrow Key - Turn ship right
 > * Up Arrow Key - Propel ship forward
 > * Down Arrow Key - Warp to safe location
-(W,A,S,D also works)
-
 > * Mouse Drag Horizontal - Control ship rotation
 > * Mouse Drag Vertical - Control ship thrust
+> * (W,A,S,D also works)
 
 ## Completed Tasks
 > + Asteroids

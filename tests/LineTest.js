@@ -1,9 +1,9 @@
 /*global TestCase geometry fail assertTrue*/
 /*jslint newcap:false*/
-
 TestCase("LineTest", {
     testConstructor: function () {
-        var line = new geometry.Line();
+        var line = Ext.create('geometry.Line');
+        //fail("this should fail");
         assertNotNull("Ensure constructor returns an object", line);
     }
 });

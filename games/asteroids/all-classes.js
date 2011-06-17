@@ -890,7 +890,7 @@ Ext.define('ui.Text', {
 
         var m = this.ctx.measureText(this.text); //gets width only... height is font size
         this.ctx.textAlign = "left";
-        this.ctx.textBaseline = "left";
+        this.ctx.textBaseline = "bottom";
         this.ctx.fillStyle = "#00FF00";
         this.ctx.fillText(this.text, 0, (this.height) / 2);
 
@@ -1479,7 +1479,7 @@ Ext.define('interactive.DraggableLayer', {
                 context: this.gameLayer
             });
             this.gameLayer.add(this.startButton);
-                  
+
             this.endButton = new ui.Button({
                 text: "You Lose",
                 width: 120,
@@ -1490,7 +1490,7 @@ Ext.define('interactive.DraggableLayer', {
                 context: this.gameLayer
             });
             this.gameLayer.add(this.endButton);
-            
+
             this.scoreText = new ui.Text({
                 text: "SCORE:",
                 width: 100,
@@ -1501,7 +1501,7 @@ Ext.define('interactive.DraggableLayer', {
                 context: this.gameLayer
             });
             this.gameLayer.add(this.scoreText);
-            
+
             this.scoreCountText = new ui.Text({
                 text: "0",
                 width: 180,
@@ -1512,7 +1512,7 @@ Ext.define('interactive.DraggableLayer', {
                 context: this.gameLayer
             });
             this.gameLayer.add(this.scoreCountText);
-            
+
             this.livesText = new ui.Text({
                 text: "LIVES:",
                 width: 10,
@@ -1522,8 +1522,8 @@ Ext.define('interactive.DraggableLayer', {
                 active: true,
                 context: this.gameLayer
             });
-            this.gameLayer.add(this.livesText); 
-                       
+            this.gameLayer.add(this.livesText);
+
             this.livesCountText = new ui.Text({
                 text: LIVES,
                 width: 180,
@@ -1589,12 +1589,6 @@ Ext.define('interactive.DraggableLayer', {
             this.state('enter');
         },
 
-        stopTimer: function () {
-            if (TIMER) {
-                clearInterval(TIMER);
-            }
-            TIMER = null;
-        },
 
         coastIsClear: function () {
             var rx, ry, rock, r, safeSpace = 100;
@@ -1761,6 +1755,13 @@ Ext.define('interactive.DraggableLayer', {
             }
         },
 
+        stopTimer: function () {
+            if (TIMER) {
+                clearInterval(TIMER);
+            }
+            TIMER = null;
+        },
+
         resize: function () {
 
             this.gameLayer.resize();
@@ -1835,23 +1836,23 @@ Ext.define('interactive.DraggableLayer', {
             case 'space':
                 this.state('spacebar_keypress');
                 break;
-                
+
             case 'down':
                 this.state('down_keypress');
                 break;
-                
+
             case 'w':
                 this.state('up_keypress');
                 break;
-                
+
             case 'a':
                 this.state('left_keypress');
                 break;
-                
+
             case 's':
                 this.state('down_keypress');
                 break;
-                
+
             case 'd':
                 this.state('right_keypress');
                 break;
@@ -1875,19 +1876,19 @@ Ext.define('interactive.DraggableLayer', {
             case 'up':
                 this.state('up_keyup');
                 break;
-                
+
             case 'space':
                 this.state('spacebar_keyup');
                 break;
-                
+
             case 'w':
                 this.state('up_keyup');
                 break;
-                
+
             case 'a':
                 this.state('left_keyup');
                 break;
-                
+
             case 'd':
                 this.state('right_keyup');
                 break;
@@ -1896,13 +1897,13 @@ Ext.define('interactive.DraggableLayer', {
                 // code
             }
         },
-        
-        editLivesLeft: function(livesChange) {
+
+        editLivesLeft: function (livesChange) {
             this.livesLeft = this.livesLeft + livesChange;
             this.livesCountText.text = this.livesLeft;
         },
-        
-        editScore: function(scoreChange) {
+
+        editScore: function (scoreChange) {
             this.score = this.score + scoreChange;
             this.scoreCountText.text = this.score;
         },
@@ -1954,22 +1955,22 @@ Ext.define('interactive.DraggableLayer', {
                 break;
 
             case 'spacebar_keypress':
-                // Only fire a bullet if the key is held every serveral ticks.
+                // Only fire a bullet if the key is held every several ticks.
                 // (See the PLAy function.)
-                if(this.antiSpamBullets == 0) {
-                  this.fireBullet();
-                  this.antiSpamBullets++;
+                if (this.antiSpamBullets === 0) {
+                    this.fireBullet();
+                    this.antiSpamBullets++;
                 }
                 break;
 
             case 'spacebar_keyup':
                 this.fireBullet();
                 break;
-                
+
             case 'down_keypress':
-                if(this.antiSpamWarp == 0) {
-                  this.ship.hyperspace();
-                  this.antiSpamWarp++;
+                if (this.antiSpamWarp === 0) {
+                    this.ship.hyperspace();
+                    this.antiSpamWarp++;
                 }
                 break;
 
@@ -2024,7 +2025,7 @@ Ext.define('interactive.DraggableLayer', {
 
         START_GAME: function (msg) {
             var me = this;
-			
+
             switch (msg) {
 
             case 'enter':
@@ -2056,19 +2057,19 @@ Ext.define('interactive.DraggableLayer', {
 
         END_GAME: function (msg) {
             var me = this;
-            
+
             switch (msg) {
 
             case 'enter':
-            	this.endButton.active = true;
-		        this.endButton.onClick(function () {
-		            this.changeState(this.START_GAME);
-		        }, this);
+                this.endButton.active = true;
+                this.endButton.onClick(function () {
+                    this.changeState(this.START_GAME);
+                }, this);
                 break;
 
             case 'tick':
-            	this.removeAllRocks();
-            	this.removeAllBullets();
+                this.removeAllRocks();
+                this.removeAllBullets();
                 this.reset();
                 this.gameLayer.update();
                 this.gameLayer.render();
@@ -2081,7 +2082,7 @@ Ext.define('interactive.DraggableLayer', {
                 this.BASE(msg);
             }
         },
-        
+
         END_LEVEL: function (msg) {
             var me = this;
 
@@ -2166,19 +2167,19 @@ Ext.define('interactive.DraggableLayer', {
                 if (!this.rocksLeft()) {
                     this.changeState(this.END_LEVEL);
                 }
-                
-                if(this.antiSpamWarp >= 1 && this.antiSpamWarp < 8) {
-                  this.antiSpamWarp++;
+
+                if (this.antiSpamWarp >= 1 && this.antiSpamWarp < 8) {
+                    this.antiSpamWarp++;
                 } else {
-                  this.antiSpamWarp = 0;
+                    this.antiSpamWarp = 0;
                 }
-                
-                if(this.antiSpamBullets >= 1 && this.antiSpamBullets < 6) {
-                  this.antiSpamBullets++;
+
+                if (this.antiSpamBullets >= 1 && this.antiSpamBullets < 6) {
+                    this.antiSpamBullets++;
                 } else {
-                  this.antiSpamBullets = 0;
+                    this.antiSpamBullets = 0;
                 }
-                
+
                 break;
 
             case 'exit':
@@ -2197,21 +2198,20 @@ Ext.define('interactive.DraggableLayer', {
             switch (msg) {
 
             case 'enter':
-            	this.editLivesLeft(-1);
-                if(this.livesLeft >= 1) {
-		            //set time-limit on this state
-		            this.startTimer();
-			        setTimeout(function () {
-			            me.changeState(me.START_LIFE);
-			        }, DELAY);
-			    }
-			    else {
-			    	//set time-limit on this state
-			    	this.startTimer();
-			        setTimeout(function () {
-			            me.changeState(me.END_GAME);
-			        }, DELAY);
-			    }
+                this.editLivesLeft(-1);
+                if (this.livesLeft >= 1) {
+                    //set time-limit on this state
+                    this.startTimer();
+                    setTimeout(function () {
+                        me.changeState(me.START_LIFE);
+                    }, DELAY);
+                } else {
+                    //set time-limit on this state
+                    this.startTimer();
+                    setTimeout(function () {
+                        me.changeState(me.END_GAME);
+                    }, DELAY);
+                }
                 break;
 
             case 'tick':

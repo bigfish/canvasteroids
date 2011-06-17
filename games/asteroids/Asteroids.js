@@ -86,7 +86,7 @@
                 context: this.gameLayer
             });
             this.gameLayer.add(this.startButton);
-                  
+
             this.endButton = new ui.Button({
                 text: "You Lose",
                 width: 120,
@@ -97,7 +97,7 @@
                 context: this.gameLayer
             });
             this.gameLayer.add(this.endButton);
-            
+
             this.scoreText = new ui.Text({
                 text: "SCORE:",
                 width: 100,
@@ -108,7 +108,7 @@
                 context: this.gameLayer
             });
             this.gameLayer.add(this.scoreText);
-            
+
             this.scoreCountText = new ui.Text({
                 text: "0",
                 width: 180,
@@ -119,7 +119,7 @@
                 context: this.gameLayer
             });
             this.gameLayer.add(this.scoreCountText);
-            
+
             this.livesText = new ui.Text({
                 text: "LIVES:",
                 width: 10,
@@ -129,8 +129,8 @@
                 active: true,
                 context: this.gameLayer
             });
-            this.gameLayer.add(this.livesText); 
-                       
+            this.gameLayer.add(this.livesText);
+
             this.livesCountText = new ui.Text({
                 text: LIVES,
                 width: 180,
@@ -196,12 +196,6 @@
             this.state('enter');
         },
 
-        stopTimer: function () {
-            if (TIMER) {
-                clearInterval(TIMER);
-            }
-            TIMER = null;
-        },
 
         coastIsClear: function () {
             var rx, ry, rock, r, safeSpace = 100;
@@ -368,6 +362,13 @@
             }
         },
 
+        stopTimer: function () {
+            if (TIMER) {
+                clearInterval(TIMER);
+            }
+            TIMER = null;
+        },
+
         resize: function () {
 
             this.gameLayer.resize();
@@ -442,23 +443,23 @@
             case 'space':
                 this.state('spacebar_keypress');
                 break;
-                
+
             case 'down':
                 this.state('down_keypress');
                 break;
-                
+
             case 'w':
                 this.state('up_keypress');
                 break;
-                
+
             case 'a':
                 this.state('left_keypress');
                 break;
-                
+
             case 's':
                 this.state('down_keypress');
                 break;
-                
+
             case 'd':
                 this.state('right_keypress');
                 break;
@@ -482,19 +483,19 @@
             case 'up':
                 this.state('up_keyup');
                 break;
-                
+
             case 'space':
                 this.state('spacebar_keyup');
                 break;
-                
+
             case 'w':
                 this.state('up_keyup');
                 break;
-                
+
             case 'a':
                 this.state('left_keyup');
                 break;
-                
+
             case 'd':
                 this.state('right_keyup');
                 break;
@@ -503,13 +504,13 @@
                 // code
             }
         },
-        
-        editLivesLeft: function(livesChange) {
+
+        editLivesLeft: function (livesChange) {
             this.livesLeft = this.livesLeft + livesChange;
             this.livesCountText.text = this.livesLeft;
         },
-        
-        editScore: function(scoreChange) {
+
+        editScore: function (scoreChange) {
             this.score = this.score + scoreChange;
             this.scoreCountText.text = this.score;
         },
@@ -561,22 +562,22 @@
                 break;
 
             case 'spacebar_keypress':
-                // Only fire a bullet if the key is held every serveral ticks.
+                // Only fire a bullet if the key is held every several ticks.
                 // (See the PLAy function.)
-                if(this.antiSpamBullets == 0) {
-                  this.fireBullet();
-                  this.antiSpamBullets++;
+                if (this.antiSpamBullets === 0) {
+                    this.fireBullet();
+                    this.antiSpamBullets++;
                 }
                 break;
 
             case 'spacebar_keyup':
                 this.fireBullet();
                 break;
-                
+
             case 'down_keypress':
-                if(this.antiSpamWarp == 0) {
-                  this.ship.hyperspace();
-                  this.antiSpamWarp++;
+                if (this.antiSpamWarp === 0) {
+                    this.ship.hyperspace();
+                    this.antiSpamWarp++;
                 }
                 break;
 
@@ -631,7 +632,7 @@
 
         START_GAME: function (msg) {
             var me = this;
-			
+
             switch (msg) {
 
             case 'enter':
@@ -663,19 +664,19 @@
 
         END_GAME: function (msg) {
             var me = this;
-            
+
             switch (msg) {
 
             case 'enter':
-            	this.endButton.active = true;
-		        this.endButton.onClick(function () {
-		            this.changeState(this.START_GAME);
-		        }, this);
+                this.endButton.active = true;
+                this.endButton.onClick(function () {
+                    this.changeState(this.START_GAME);
+                }, this);
                 break;
 
             case 'tick':
-            	this.removeAllRocks();
-            	this.removeAllBullets();
+                this.removeAllRocks();
+                this.removeAllBullets();
                 this.reset();
                 this.gameLayer.update();
                 this.gameLayer.render();
@@ -688,7 +689,7 @@
                 this.BASE(msg);
             }
         },
-        
+
         END_LEVEL: function (msg) {
             var me = this;
 
@@ -773,19 +774,19 @@
                 if (!this.rocksLeft()) {
                     this.changeState(this.END_LEVEL);
                 }
-                
-                if(this.antiSpamWarp >= 1 && this.antiSpamWarp < 8) {
-                  this.antiSpamWarp++;
+
+                if (this.antiSpamWarp >= 1 && this.antiSpamWarp < 8) {
+                    this.antiSpamWarp++;
                 } else {
-                  this.antiSpamWarp = 0;
+                    this.antiSpamWarp = 0;
                 }
-                
-                if(this.antiSpamBullets >= 1 && this.antiSpamBullets < 6) {
-                  this.antiSpamBullets++;
+
+                if (this.antiSpamBullets >= 1 && this.antiSpamBullets < 6) {
+                    this.antiSpamBullets++;
                 } else {
-                  this.antiSpamBullets = 0;
+                    this.antiSpamBullets = 0;
                 }
-                
+
                 break;
 
             case 'exit':
@@ -804,21 +805,20 @@
             switch (msg) {
 
             case 'enter':
-            	this.editLivesLeft(-1);
-                if(this.livesLeft >= 1) {
-		            //set time-limit on this state
-		            this.startTimer();
-			        setTimeout(function () {
-			            me.changeState(me.START_LIFE);
-			        }, DELAY);
-			    }
-			    else {
-			    	//set time-limit on this state
-			    	this.startTimer();
-			        setTimeout(function () {
-			            me.changeState(me.END_GAME);
-			        }, DELAY);
-			    }
+                this.editLivesLeft(-1);
+                if (this.livesLeft >= 1) {
+                    //set time-limit on this state
+                    this.startTimer();
+                    setTimeout(function () {
+                        me.changeState(me.START_LIFE);
+                    }, DELAY);
+                } else {
+                    //set time-limit on this state
+                    this.startTimer();
+                    setTimeout(function () {
+                        me.changeState(me.END_GAME);
+                    }, DELAY);
+                }
                 break;
 
             case 'tick':

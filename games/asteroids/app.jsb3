@@ -110,6 +110,10 @@
                     "name": "Button.js"
                 },
                 {
+                    "path": "../../lib/ui/",
+                    "name": "Text.js"
+                },
+                {
                     "path": "../../lib/sprites/",
                     "name": "Point.js"
                 },

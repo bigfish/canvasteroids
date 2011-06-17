@@ -106,7 +106,11 @@ Ext.define('controller.Keyboard', {
             37: 'left',
             38: 'up',
             39: 'right',
-            40: 'down'
+            40: 'down',
+            65: 'a',
+            68: 'd',
+            83: 's',
+            87: 'w'
         },
 
         getKey: function (e) {
@@ -230,7 +234,6 @@ Ext.define('geometry.Line', {
         var dy = this.end.y - this.start.y;
         return Math.sqrt(dx * dx + dy * dy);
     }
-
 });
 
 /**
@@ -499,11 +502,15 @@ Ext.define('geometry.Path', {
     },
 
     addPoint: function (pt) {
-        this.points.push(pt);
+        return this.points.push(pt) - 1;
     },
 
     getPoint: function (idx) {
         return this.points[idx];
+    },
+    
+    removePoint: function(idx) {
+        this.points.splice(idx, 1);
     },
 
     clearPoints: function () {
@@ -867,6 +874,30 @@ Ext.define('ui.Button', {
     }
 });
 
+/*global canvasutils */
+Ext.define('ui.Text', {
+
+    extend: 'ui.Component',
+    constructor: function (props) {
+        this.callParent(this.applyProps(props, {
+            text: 'Text'
+        }));
+    },
+
+    draw: function () {
+
+        this.beforeDraw();
+
+        var m = this.ctx.measureText(this.text); //gets width only... height is font size
+        this.ctx.textAlign = "left";
+        this.ctx.textBaseline = "left";
+        this.ctx.fillStyle = "#00FF00";
+        this.ctx.fillText(this.text, 0, (this.height) / 2);
+
+        this.afterDraw();
+    }
+});
+
 Ext.define('sprites.Point', {
     extend: 'drawable.DrawableSquare',
     mixins: ['motion.Velocity', 'collision.Collision'],
@@ -881,6 +912,8 @@ Ext.define('sprites.Bullet', {
     extend: 'sprites.Point',
     requires: ['eventbus.EventBus'],
     constructor: function (props) {
+        var me = this;
+        
         this.callParent([Ext.applyIf(props, {
             width: 2,
             height: 2,
@@ -889,6 +922,11 @@ Ext.define('sprites.Bullet', {
             vx: 0,
             vy: 0
         })]);
+        
+        // expire bullet after time (rather than distance)
+        setTimeout(function () {
+            eventbus.EventBus.publish('bulletExpired', me);
+        }, 2000);
     },
 
     update: function () {
@@ -898,11 +936,6 @@ Ext.define('sprites.Bullet', {
         this.dx += Math.abs(this.vx);
         this.dy += Math.abs(this.vy);
 
-        //expire the bullet after a maximum distance
-        if (this.dx > plane_width * 0.6 || this.dy > plane_height * 0.6) {
-            eventbus.EventBus.publish('bulletExpired', this);
-            return;
-        }
         //do wrapping
         if (this.x < 0) {
             this.x += plane_width;
@@ -941,17 +974,6 @@ Ext.define('sprites.Bullet', {
             this.height = 25;
             this.width = 15;
             this.baseAngle = Math.atan2(this.height, this.width / 2);
-            this.setPointsFromArray([Ext.create('geometry.Point', {
-                x: -this.width / 2,
-                y: this.height / 2
-            }), Ext.create('geometry.Point', {
-                x: 0,
-                y: -this.height / 2
-            }), Ext.create('geometry.Point', {
-                x: this.width / 2,
-                y: this.height / 2
-            })]);
-
         },
 
         init: function () {
@@ -966,6 +988,17 @@ Ext.define('sprites.Bullet', {
             this.force = 0;
             this.friction = 0.998;
             this.thrust = false;
+            
+            this.setPointsFromArray([Ext.create('geometry.Point', {
+                x: -this.width / 2,
+                y: this.height / 2
+            }), Ext.create('geometry.Point', {
+                x: 0,
+                y: -this.height / 2
+            }), Ext.create('geometry.Point', {
+                x: this.width / 2,
+                y: this.height / 2
+            })]);
         },
 
         reset: function () {
@@ -1003,8 +1036,14 @@ Ext.define('sprites.Bullet', {
         },
 
         startThrust: function () {
-            this.thrust = true;
-            this.force = -1.1; //-y direction
+            if(!this.thrust) {
+                this.thrust = true;
+                this.force = -1.1; //-y direction
+                this.thrustPt = this.addPoint(Ext.create('geometry.Point', {
+                    x: 0,
+                    y: this.height - (this.height / 6) 
+                }));
+            }
         },
 
         setThrust: function (f) {
@@ -1013,12 +1052,20 @@ Ext.define('sprites.Bullet', {
         },
 
         stopThrust: function () {
-            this.thrust = false;
-            this.force = 0;
+            if(this.thrust) {
+                this.thrust = false;
+                this.force = 0;
+                this.removePoint(this.thrustPt);
+            }
         },
 
         rotateBy: function (incr) {
             this.rotation += incr;
+        },
+        
+        hyperspace: function () {
+            this.x = Math.random() * this.context.canvas_width;
+            this.y = Math.random() * this.context.canvas_height;
         },
 
         update: function () {
@@ -1358,17 +1405,21 @@ Ext.define('interactive.DraggableLayer', {
     var TIMER;
     var MAX_BULLETS = 25;
     var MAX_SPEED = 15;
+    var DELAY = 3000;
+    var LIVES = 3;
     //initialize canvas and clear screen
     Ext.define('Asteroids', {
 
         extend: 'oop.InitProps',
 
-        requires: ['eventbus.EventBus', 'controller.TouchPad', 'drawable.DrawableLine', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'interactive.DraggableLayer'],
+        requires: ['eventbus.EventBus', 'controller.TouchPad', 'drawable.DrawableLine', 'soundeffects.SoundEffects', 'sprites.Rock', 'sprites.Ship', 'sprites.ShipFragment', 'sprites.Bullet', 'drawable.Layer', 'controller.Keyboard', 'ui.Button', 'ui.Text', 'interactive.DraggableLayer'],
 
         constructor: function (props) {
             this.callParent([props]);
             this.rocks = [];
             this.bullets = [];
+            this.antiSpamBullets = 0;
+            this.antiSpamWarp = 0;
             var self = this;
             //handle window resizes
             window.onresize = function () {
@@ -1428,6 +1479,61 @@ Ext.define('interactive.DraggableLayer', {
                 context: this.gameLayer
             });
             this.gameLayer.add(this.startButton);
+                  
+            this.endButton = new ui.Button({
+                text: "You Lose",
+                width: 120,
+                height: 40,
+                x: this.gameLayer.width / 2 - 100,
+                y: this.gameLayer.height / 2 - 20,
+                active: false,
+                context: this.gameLayer
+            });
+            this.gameLayer.add(this.endButton);
+            
+            this.scoreText = new ui.Text({
+                text: "SCORE:",
+                width: 100,
+                height: 40,
+                x: 3,
+                y: 3,
+                active: true,
+                context: this.gameLayer
+            });
+            this.gameLayer.add(this.scoreText);
+            
+            this.scoreCountText = new ui.Text({
+                text: "0",
+                width: 180,
+                height: 40,
+                x: 100,
+                y: 3,
+                active: true,
+                context: this.gameLayer
+            });
+            this.gameLayer.add(this.scoreCountText);
+            
+            this.livesText = new ui.Text({
+                text: "LIVES:",
+                width: 10,
+                height: 40,
+                x: 240,
+                y: 3,
+                active: true,
+                context: this.gameLayer
+            });
+            this.gameLayer.add(this.livesText); 
+                       
+            this.livesCountText = new ui.Text({
+                text: LIVES,
+                width: 180,
+                height: 40,
+                x: 325,
+                y: 3,
+                active: true,
+                context: this.gameLayer
+            });
+            this.gameLayer.add(this.livesCountText);
 
             soundeffects.SoundEffects.defineSounds({
                 'laser': '../../lib/sounds/laser.mp3',
@@ -1572,6 +1678,7 @@ Ext.define('interactive.DraggableLayer', {
         },
 
         fireBullet: function () {
+            this.editScore(-1);
             var bulletSpeed = 8;
             //bullet should initially be at the tip of the space ship
             //moving away (up) 
@@ -1597,6 +1704,7 @@ Ext.define('interactive.DraggableLayer', {
                 //this function is called while the current transformation matrix
                 //has a translation applied to it, so we need to use the polyfill
                 if (rock.containsPoint(bullet.x, bullet.y)) {
+                    this.editScore(+10);
                     this.removeBullet(bullet);
                     return true;
                 }
@@ -1608,6 +1716,7 @@ Ext.define('interactive.DraggableLayer', {
             var newRock, rock_conf, i;
             //only create new rocks if it is not the smallest size
             if (rock.size > 1) {
+                this.editScore(+100);
                 for (i = 0; i < 3; i++) {
                     this.addRock(new sprites.Rock({
                         context: this.gameLayer,
@@ -1656,9 +1765,11 @@ Ext.define('interactive.DraggableLayer', {
 
             this.gameLayer.resize();
 
-            //recenter button
+            //recenter buttons
             this.startButton.x = this.gameLayer.canvas_width / 2 - this.startButton.width / 2;
             this.startButton.y = this.gameLayer.canvas_height / 2 - this.startButton.height / 2;
+            this.endButton.x = this.gameLayer.canvas_width / 2 - this.endButton.width / 2;
+            this.endButton.y = this.gameLayer.canvas_height / 2 - this.endButton.height / 2;
 
             //resize touchPad
             this.touchPad.width = this.gameLayer.canvas_width;
@@ -1671,7 +1782,6 @@ Ext.define('interactive.DraggableLayer', {
         },
 
         explodeShip: function (ship) {
-
             this.ship.active = false;
             this.shipFragments = [new sprites.ShipFragment({
                 x: ship.x + ship.points[0].x,
@@ -1703,6 +1813,7 @@ Ext.define('interactive.DraggableLayer', {
             })];
             this.gameLayer.add(this.shipFragments);
             this.sfx.play('boom');
+            this.editScore(-1000);
         },
 
 
@@ -1722,7 +1833,27 @@ Ext.define('interactive.DraggableLayer', {
                 break;
 
             case 'space':
-                this.state('spacebar');
+                this.state('spacebar_keypress');
+                break;
+                
+            case 'down':
+                this.state('down_keypress');
+                break;
+                
+            case 'w':
+                this.state('up_keypress');
+                break;
+                
+            case 'a':
+                this.state('left_keypress');
+                break;
+                
+            case 's':
+                this.state('down_keypress');
+                break;
+                
+            case 'd':
+                this.state('right_keypress');
                 break;
 
             default:
@@ -1744,10 +1875,36 @@ Ext.define('interactive.DraggableLayer', {
             case 'up':
                 this.state('up_keyup');
                 break;
+                
+            case 'space':
+                this.state('spacebar_keyup');
+                break;
+                
+            case 'w':
+                this.state('up_keyup');
+                break;
+                
+            case 'a':
+                this.state('left_keyup');
+                break;
+                
+            case 'd':
+                this.state('right_keyup');
+                break;
 
             default:
                 // code
             }
+        },
+        
+        editLivesLeft: function(livesChange) {
+            this.livesLeft = this.livesLeft + livesChange;
+            this.livesCountText.text = this.livesLeft;
+        },
+        
+        editScore: function(scoreChange) {
+            this.score = this.score + scoreChange;
+            this.scoreCountText.text = this.score;
         },
 
         //state functions
@@ -1796,8 +1953,24 @@ Ext.define('interactive.DraggableLayer', {
                 this.ship.stopThrust();
                 break;
 
-            case 'spacebar':
+            case 'spacebar_keypress':
+                // Only fire a bullet if the key is held every serveral ticks.
+                // (See the PLAy function.)
+                if(this.antiSpamBullets == 0) {
+                  this.fireBullet();
+                  this.antiSpamBullets++;
+                }
+                break;
+
+            case 'spacebar_keyup':
                 this.fireBullet();
+                break;
+                
+            case 'down_keypress':
+                if(this.antiSpamWarp == 0) {
+                  this.ship.hyperspace();
+                  this.antiSpamWarp++;
+                }
                 break;
 
             case 'click':
@@ -1851,15 +2024,18 @@ Ext.define('interactive.DraggableLayer', {
 
         START_GAME: function (msg) {
             var me = this;
-
-            this.startButton.active = true;
-            this.startButton.onClick(function () {
-                this.changeState(this.START_LIFE);
-            }, this);
-
+			
             switch (msg) {
 
             case 'enter':
+                this.score = 0;
+                this.editScore(0);
+                this.livesLeft = LIVES;
+                this.editLivesLeft(0);
+                this.startButton.active = true;
+                this.startButton.onClick(function () {
+                    this.changeState(this.START_LIFE);
+                }, this);
                 this.makeRocks();
                 this.startTimer();
                 break;
@@ -1878,15 +2054,44 @@ Ext.define('interactive.DraggableLayer', {
             }
         },
 
-
-        END_LEVEL: function (msg) {
+        END_GAME: function (msg) {
             var me = this;
+            
             switch (msg) {
 
             case 'enter':
+            	this.endButton.active = true;
+		        this.endButton.onClick(function () {
+		            this.changeState(this.START_GAME);
+		        }, this);
+                break;
+
+            case 'tick':
+            	this.removeAllRocks();
+            	this.removeAllBullets();
+                this.reset();
+                this.gameLayer.update();
+                this.gameLayer.render();
+                break;
+
+            case 'exit':
+                break;
+
+            default:
+                this.BASE(msg);
+            }
+        },
+        
+        END_LEVEL: function (msg) {
+            var me = this;
+
+            switch (msg) {
+
+            case 'enter':
+                this.editLivesLeft(+1);
                 setTimeout(function () {
                     me.startLevel();
-                }, 5000);
+                }, DELAY);
                 this.startTimer();
                 break;
 
@@ -1911,6 +2116,7 @@ Ext.define('interactive.DraggableLayer', {
 
             case 'enter':
                 this.startButton.active = false;
+                this.endButton.active = false;
                 this.ship.init();
                 this.startTimer();
                 break;
@@ -1960,6 +2166,19 @@ Ext.define('interactive.DraggableLayer', {
                 if (!this.rocksLeft()) {
                     this.changeState(this.END_LEVEL);
                 }
+                
+                if(this.antiSpamWarp >= 1 && this.antiSpamWarp < 8) {
+                  this.antiSpamWarp++;
+                } else {
+                  this.antiSpamWarp = 0;
+                }
+                
+                if(this.antiSpamBullets >= 1 && this.antiSpamBullets < 6) {
+                  this.antiSpamBullets++;
+                } else {
+                  this.antiSpamBullets = 0;
+                }
+                
                 break;
 
             case 'exit':
@@ -1978,11 +2197,21 @@ Ext.define('interactive.DraggableLayer', {
             switch (msg) {
 
             case 'enter':
-                this.startTimer();
-                //set time-limit on this state
-                setTimeout(function () {
-                    me.changeState(me.START_LIFE);
-                }, 5000);
+            	this.editLivesLeft(-1);
+                if(this.livesLeft >= 1) {
+		            //set time-limit on this state
+		            this.startTimer();
+			        setTimeout(function () {
+			            me.changeState(me.START_LIFE);
+			        }, DELAY);
+			    }
+			    else {
+			    	//set time-limit on this state
+			    	this.startTimer();
+			        setTimeout(function () {
+			            me.changeState(me.END_GAME);
+			        }, DELAY);
+			    }
                 break;
 
             case 'tick':

@@ -11,4 +11,12 @@ describe("Breakout Game Tests", function () {
         expect(breakout).toBeDefined();
     });
 
+    it("should display the game title", function () {
+        expect(breakout.startButton.active).toBeTruthy();
+    });
+
+    it("should display a start button", function () {
+        expect(breakout.startButton.active).toBeTruthy();
+    });
+
 });

@@ -1,7 +1,7 @@
 # CanvaSteroids
 ### A Javascript Library for HTML Canvas Games using ExtJS 4 
 
-Uses Ext JS 4. See [relevant blog posts](http://www.dafishinsea.com/blog/tag/canvasteroids/).
+See [relevant blog posts](http://www.dafishinsea.com/blog/tag/canvasteroids/).
 
 [offical website](http://canvasteroids.com)
 

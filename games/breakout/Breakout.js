@@ -3,7 +3,5 @@ Ext.define('breakout.Breakout', {
     requires: [],
     constructor: function (props) {
         this.callParent([props]);
-
     }
-
 });

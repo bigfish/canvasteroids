@@ -27,6 +27,7 @@
     <script type="text/javascript" charset="utf-8">
       Ext.Loader.setConfig({
           paths: {
+            'breakout': '.',
             'canvasteroids': '../../lib',
             'canvasutils': '../../lib/canvasutils',
             'collection': '../../lib/collection',
@@ -45,14 +46,13 @@
             },
             enabled: true
         });
-        Ext.require('Breakout');
+        Ext.require('breakout.Breakout');
         Ext.onReady(function () {
-            var game = new Breakout({
+            var game = new breakout.Breakout({
                 canvasId: 'gameCanvas',
                 stroke: '#FF0000'
             });
-            game.init();
-            game.start();
+            //game.start();
         });
     </script>
   </head>
